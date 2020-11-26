@@ -8,7 +8,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "Honeywell Home", namespace: "thecloudtaylor", author: "Taylor Brown") {
+    definition (name: "Honeywell Home Thermostat", namespace: "thecloudtaylor", author: "Taylor Brown") {
 		capability "Actuator"
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
