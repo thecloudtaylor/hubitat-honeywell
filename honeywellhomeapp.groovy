@@ -73,17 +73,51 @@ def connectToHoneywell()
 {
     LogDebug("connectToHoneywell()");
 
-	return dynamicPage(name: "connectToHoneywell", title: "Connect with HoneyWell Home", nextPage:"deviceSelection", install:true, uninstall: false) {
-		section("Honeywell Login")
-        {
-			paragraph "Click below to be redirected to Honeywall to authorize Hubitat access."
-            href url:honeywell_auth(), external:true, required:false, title:"Connect to HoneyWell:", description:description
-		} 
-		section("Settings")
-        {
-			input("debugOutput", "bool", title: "Enable debug logging?", defaultValue: true, displayDuringSetup: false, required: false)
+    def state = java.net.URLEncoder.encode("${getHubUID()}/apps/${app.id}", "UTF-8")
+    def escapedRedirectURL = java.net.URLEncoder.encode(redirectURL, "UTF-8")
+    def authQueryString = "response_type=code&redirect_uri=${escapedRedirectURL}&client_id=${conusmerKey}&state=${state}";
+
+	def params = [
+    	uri: apiURL,
+        path: "/oauth2/authorize",
+        queryString: authQueryString.toString()
+    ]
+    LogDebug("honeywell_auth request params: ${params}");
+
+    try {
+		httpPost(params) { response -> 
+			if (response.status == 302) 
+            {
+                LogDebug("Response 302, getting redirect")
+                def redirectLocation = response.headers.'Location'
+				LogDebug("Redirect: ${redirectLocation}");
+                def redirectURL = (redirectLocation).toString();
+                redirectURL=("'${redirectURL}' target='_blank'");
+				LogDebug("RedirectString: ${redirectURL}");
+			}
+            else
+            {
+				LogError("Auth request Returned Invalid HTTP Response: ${response.status}")
+                return false;
+			} 
 		}
 	}
+	catch (e)	{
+		LogError("Exception In API Auth: ${e}");
+        return false;
+	}
+
+    return dynamicPage(name: "connectToHoneywell", title: "Connect with HoneyWell Home", nextPage:"deviceSelection", install:true, uninstall: false) {
+                    section("Honeywell Login")
+                    {
+                        paragraph "Click below to be redirected to Honeywall to authorize Hubitat access."
+                        href url:redirectURL, external:true, required:false, title:"Connect to Honeywell:", description:description
+                    } 
+                    section("Settings")
+                    {
+                        input("debugOutput", "bool", title: "Enable debug logging?", defaultValue: true, displayDuringSetup: false, required: false)
+                    }
+                }
 }
 
 def deviceSelection()
@@ -129,13 +163,12 @@ def honeywell_auth()
                 LogDebug("Response 302, getting redirect")
                 def redirectLocation = response.headers.'Location'
 				LogDebug("Redirect: ${redirectLocation}");
-                return redirectLocation;
+                return (redirectLocation).toString();
 			}
             else
             {
 				LogError("Auth request Returned Invalid HTTP Response: ${response.status}")
         		return false
-
 			} 
 		}
 	}
