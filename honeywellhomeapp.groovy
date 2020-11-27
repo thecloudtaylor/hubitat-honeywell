@@ -48,9 +48,9 @@ def setupPage() {
         connectToHoneywell()
         getDiscoverButton()
         
-    //    section {
-    //        input name: "debugOutput", type: "bool", title: "Enable Debug Logging?", defaultValue: false, submitOnChange: true
-    //    }
+        section {
+            input name: "debugOutput", type: "bool", title: "Enable Debug Logging?", defaultValue: false, submitOnChange: true
+        }
         
         listDiscoveredDevices()
         
@@ -103,16 +103,30 @@ def installed()
 {
     LogInfo("Installing Honeywell Home.");
     createAccessToken();
+    
+}
+
+def initialize() 
+{
+    LogInfo("Initializing Honeywell Home.");
+    unschedule()
+    refreshToken()
     runEvery1Hour refreshToken
+}
+
+def updated() 
+{
+    LogDebug("Updated with config: ${settings}");
+    initialize();
 }
 
 def uninstalled() 
 {
     LogInfo("Uninstalling Honeywell Home.");
-
+    unschedule()
     for (device in getChildDevices())
     {
-        //deleteChildDevice(device.deviceNetworkId)
+        deleteChildDevice(device.deviceNetworkId)
     }
 }
 
@@ -221,12 +235,7 @@ def listDiscoveredDevices() {
     }
 }
 
-def updated() 
-{
-    LogDebug("Updated with config: ${settings}");
-    refreshToken();
-    runEvery1Hour refreshToken
-}
+
 
 def appButtonHandler(btn) {
     switch (btn) {
@@ -279,43 +288,25 @@ def discoverDevices()
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        LogError("Location Discover failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return;
     }
-    reJson.each {
-        LogDebug("test: ${it}")
-        //LogDebug("test: ${it.LocationID}")
-        //LogDebug("test: ${it[LocationID]}")
-        //LogDebug("test: ${it[0]}")
-        //LogDebug("test: ${it.getType()}")
-        //LogDebug("test: ${it['LocationID']}")
-        //LogDebug("test: ${it[0]}")
 
-        it.each
-        {
-            LogDebug("test2: ${it}")
+    //BugBug: There could be multiple locations. I should be checking each.
+    def locationID = reJson.locationID[0].toString()
+    LogDebug("LocationID: ${locationID}");
 
-        }
-
-    }
-    def test = reJson[0]; 
-    //I suspect there can be multiple locations
-    LogDebug("reJson2: ${test[LocationID]}")
-    
-
-    def locationID = reJson[0].LocationID.toString();
-    LogDebug(locationID);
-
+    //BugBug: Need to Make Sure Each is a Thermosate
     reJson.devices.each {
         LogDebug("DeviceID: ${it.deviceID[0].toString()}")
         LogDebug("DeviceModel: ${it.deviceModel[0].toString()}")
-        LogDebug("LocationID: ${it.parentRelations?.getAt(0)?.LocationID.toString()}")
 
         try 
         {
             addChildDevice(
                 'thecloudtaylor',
                 'Honeywell Home Thermostat',
-                "${it.parentRelations[0].locationID} - ${it.deviceID[0].toString()}",
+                "${locationID} - ${it.deviceID[0].toString()}",
                 [
                     name: "Honeywell - ${it.deviceModel[0].toString()} - ${it.deviceID[0].toString()}",
                     label: it.userDefinedDeviceName[0].toString()
@@ -462,7 +453,7 @@ def loginResponse(response)
         LogError("LoginResponse Failed HTTP Request Status: ${reCode}");
     }
 }
-/*
+
 def updateThermostats(hubDevice)
 {
     LogDebug("updateThermostat()");
@@ -470,10 +461,14 @@ def updateThermostats(hubDevice)
     def children = getChildDevices()
     children.each {
         if (it != null) {
-            def deviceID = it.getDeviceNetworkId();      
-            LogDebug("Attempting to Update DeviceID: ${deviceID}");
+            def deviceID = it.getDeviceNetworkId();
+            def locDelminator = deviceID.indexOf('-');
+            def honeywellLocation = deviceID.substring(0, (locDelminator-1))
+            def honewellDeviceID = deviceID.substring((locDelminator+2))
 
-            def uri = global_apiURL + '/v2/devices/thermostats/'+ deviceID + "?apikey=" + global_conusmerKey
+            LogDebug("Attempting to Update DeviceID: ${honewellDeviceID}, With LocationID: ${honeywellLocation}");
+
+            def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
             def headers = [ Authorization: 'Bearer ' + state.access_token ]
             def contentType = 'application/json'
             def params = [ uri: uri, headers: headers, contentType: contentType ]
@@ -492,16 +487,73 @@ def updateThermostats(hubDevice)
             }
             catch (groovyx.net.http.HttpResponseException e) 
             {
-                LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+                LogError("Thermosate API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
             }
 
-            reJson.devices.each {
-                LogDebug("DeviceID: ${it.deviceID}")
-                LogDebug("DeviceID: ${it.userDefinedDeviceName}")
+                def tempUnits = "F"
+                if (reJson.units != "Fahrenheit")
+                {
+                    tempUnits = "C"
+                }
+                LogDebug("updateThermostats-tempUnits: ${tempUnits}")
 
+                def indoorTemperature = reJson.indoorTemperature
+                LogDebug("updateThermostats-indoorTemperature: ${indoorTemperature}")
+                sendEvent(it, [name: 'temperature', value: indoorTemperature, unit: tempUnits])
 
+                def heatingSetpoint = reJson.changeableValues.heatSetpoint
+                LogDebug("updateThermostats-heatSetpoint: ${heatingSetpoint}")
+                sendEvent(it, [name: 'heatingSetpoint', value: heatingSetpoint, unit: tempUnits])
 
+                def coolingSetpoint = reJson.changeableValues.coolSetpoint
+                LogDebug("updateThermostats-coolingSetpoint: ${coolingSetpoint}")
+                sendEvent(it, [name: 'coolingSetpoint', value: coolingSetpoint, unit: tempUnits])
+
+                def supportedThermostatFanModes = reJson.settings.fan.allowedModes
+                def lowerCaseSupportedFanModes = []
+                supportedThermostatFanModes.each {m -> lowerCaseSupportedFanModes.add(m.toLowerCase())}
+                LogDebug("updateThermostats-supportedThermostatFanModes: ${lowerCaseSupportedFanModes}")
+                sendEvent(it, [name: 'supportedThermostatFanModes', value: lowerCaseSupportedFanModes])
+
+                def supportedThermostatModes = reJson.allowedModes
+                def lowerCaseSupportedThermostatModes = []
+                supportedThermostatModes.each {m -> lowerCaseSupportedThermostatModes.add(m.toLowerCase())}
+                LogDebug("updateThermostats-supportedThermostatModes: ${lowerCaseSupportedThermostatModes}")
+                sendEvent(it, [name: 'supportedThermostatFanModes', value: lowerCaseSupportedThermostatModes])
+
+                def thermostatMode = (reJson.changeableValues.mode).toLowerCase();
+                LogDebug("updateThermostats-thermostatMode: ${thermostatMode}")
+                sendEvent(it, [name: 'thermostatMode', value: thermostatMode])
+
+                def thermostatFanMode = (reJson.settings.fan.changeableValues.mode).toLowerCase();
+                LogDebug("updateThermostats-thermostatFanMode: ${thermostatFanMode}")
+                sendEvent(it, [name: 'thermostatFanMode', value: thermostatFanMode])
+
+                def operationStatus = reJson.operationStatus.mode
+                def formatedOperationStatus =''
+                if (operationStatus == "EquipmentOff")
+                {
+                    formatedOperationStatus = "idle";
+                }
+                else if(operationStatus == "Heat")
+                {
+                    formatedOperationStatus = "heating";
+                }
+                else if(operationStatus == "Cool")
+                {
+                    formatedOperationStatus = "cooling";
+                }
+                else
+                {
+                    LogError("Unexpected Operation Status: ${operationStatus}")
+                }
+
+                LogDebug("updateThermostats-thermostatOperatingState: ${formatedOperationStatus}")
+                sendEvent(it, [name: 'thermostatOperatingState', value: formatedOperationStatus])
+
+                def humidity = reJson.indoorHumidity
+                LogDebug("updateThermostats-humidity: ${humidity}")
+                sendEvent(it, [name: 'humidity', value: humidity])
         }
     }
 }
-*/
