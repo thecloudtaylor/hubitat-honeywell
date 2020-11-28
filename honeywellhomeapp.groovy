@@ -122,7 +122,8 @@ def initialize()
     LogInfo("Initializing Honeywell Home.");
     unschedule()
     refreshToken()
-    runEvery15Minutes refreshAllThermostats
+    refreshAllThermostats()
+    runEvery15Minutes(refreshAllThermostats)
 }
 
 def updated() 
