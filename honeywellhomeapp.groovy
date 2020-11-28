@@ -314,7 +314,7 @@ def discoverDevices()
 
         try 
         {
-            addChildDevice(
+            def newDevice = addChildDevice(
                 'thecloudtaylor',
                 'Honeywell Home Thermostat',
                 "${locationID} - ${it.deviceID[0].toString()}",
@@ -323,7 +323,7 @@ def discoverDevices()
                     label: it.userDefinedDeviceName[0].toString()
                 ])
             
-
+             refreshThermosat(newDevice)
         } 
         catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
         {
