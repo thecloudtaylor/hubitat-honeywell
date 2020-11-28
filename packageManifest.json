@@ -1,0 +1,27 @@
+{
+  "packageName": "Honeywell Home",
+  "author": "Taylor Brown(@thecloudtaylor)",
+  "version": "0.1.2",
+  "minimumHEVersion": "2.2.4",
+  "dateReleased": "2020-11-28",
+  "apps": [
+    {
+      "id": "fe2bb542-854f-47b4-8d20-cde1ead99f2d",
+      "name": "Honeywell Home",
+      "namespace": "thecloudtaylor",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/0.1.2/honeywellhomeapp.groovy",
+      "required": true,
+      "oauth": true,
+      "primary": false
+    }
+  ],
+  "drivers": [
+    {
+      "id": "390cc6e1-acbb-4af3-be52-7a68e4bcc580",
+      "name": "Honeywell Home Thermostat",
+      "namespace": "thecloudtaylor",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/0.1.2/honeywellhomedriver.groovy",
+      "required": true
+    }
+  ]
+}
