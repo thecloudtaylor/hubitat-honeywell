@@ -87,6 +87,7 @@ void cool()
 void emergencyHeat()
 {
     LogDebug("emergencyHeat called");
+    
 }
 
 void fanAuto()
@@ -147,35 +148,5 @@ void setThermostatMode(thermostatmode)
 void refresh()
 {
     LogDebug("Refresh called");
-    UpdateAttributes();
-}
-
-
-void UpdateAttributes()
-{
-    device.sendEvent(name: "coolingSetpoint", value: 72, unit: "F");
-
-    device.sendEvent(name: "heatingSetpoint", value: 68, unit: "F");
-
-    //device.sendEvent(name: "schedule - JSON_OBJECT
-
-    //Posible Values: ENUM ["on", "circulate", "auto"]
-    device.sendEvent(name: "supportedThermostatFanModes", value: ["on", "circulate", "auto"], displayed: false);
-
-    //Posible Values: ENUM ["auto", "off", "heat", "emergency heat", "cool"]
-    device.sendEvent(name: "supportedThermostatModes", value: ["auto", "off", "heat", "emergency heat", "cool"], displayed: false);
-
-    device.sendEvent(name: "temperature", value: 70, unit: "F");
-
-    //Posible Values: ENUM ["on", "circulate", "auto"]
-    device.sendEvent(name: "thermostatFanMode", value: ["on", "circulate", "auto"], displayed: false);
-
-    //Posible Values: ENUM ["auto", "off", "heat", "emergency heat", "cool"]
-    device.sendEvent(name: "thermostatMode", value: ["auto", "off", "heat", "emergency heat", "cool"], displayed: false);
-
-    //Posible Values: ENUM ["heating", "pending cool", "pending heat", "vent economizer", "idle", "cooling", "fan only"]
-    device.sendEvent(name: "thermostatOperatingState", value: ["heating", "pending cool", "pending heat", "vent economizer", "idle", "cooling", "fan only"], displayed: false);
-
-    device.sendEvent(name: "thermostatSetpoint", value: 69, unit: "F");
-
+    parent.updateThermosat(device)
 }
