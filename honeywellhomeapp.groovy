@@ -1,10 +1,19 @@
 /*
 Hubitat Driver For Honeywell Thermistate
-(C) 2020 - Taylor Brown
+
+Copyright 2020 - Taylor Brown
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 11-25-2020 :  Initial 
+11-27-2020 :  Alpha Release (0.1)
 
-Considerable Credit Goes To: https://github.com/dkilgore90/google-sdm-api/
+Considerable inspiration an example to: https://github.com/dkilgore90/google-sdm-api/
 */
 
 
@@ -110,7 +119,7 @@ def initialize()
     LogInfo("Initializing Honeywell Home.");
     unschedule()
     refreshToken()
-    runEvery1Hour refreshToken
+    runEvery30Minutes refreshToken
     runEvery15Minutes refreshAllThermostats
 }
 
@@ -428,7 +437,7 @@ def refreshToken()
         LogError("Failed to refresh token, refresh token null.")
     }
 
-    runEvery1Hour refreshToken
+    runEvery30Minutes refreshToken
 }
 
 def loginResponse(response) 
@@ -639,7 +648,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
 
 def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
 {
-    LogDebug("setThermosatFan")
+    LogDebug("setThermosatFan"  )
     def deviceID = device.getDeviceNetworkId();
     def locDelminator = deviceID.indexOf('-');
     def honeywellLocation = deviceID.substring(0, (locDelminator-1))
