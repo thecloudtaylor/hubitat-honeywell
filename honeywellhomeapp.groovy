@@ -1,11 +1,10 @@
-
 /*
 Hubitat Driver For Honeywell Thermistate
 (C) 2020 - Taylor Brown
 
 11-25-2020 :  Initial 
 
-Credit https://github.com/dkilgore90/google-sdm-api/blob/35f793dc80dc55e266b2e3c8620e943494c5de1d/sdm-api-app.groovy
+Considerable Credit Goes To: https://github.com/dkilgore90/google-sdm-api/
 */
 
 
@@ -78,10 +77,10 @@ def debugPage() {
 
 def LogDebug(logMessage)
 {
-    //if(settings?.debugOutput)
-    //{
+    if(settings?.debugOutput)
+    {
         log.debug "${logMessage}";
-    //}
+    }
 }
 
 def LogInfo(logMessage)
@@ -112,7 +111,7 @@ def initialize()
     unschedule()
     refreshToken()
     runEvery1Hour refreshToken
-    runEvery15Minutes updateThermostats
+    runEvery15Minutes refreshAllThermostats
 }
 
 def updated() 
@@ -246,7 +245,7 @@ def appButtonHandler(btn) {
         deleteDevices()
         break
     case 'refreshDevices':
-        updateThermostats()
+        refreshAllThermostats()
         break
     }
 }
@@ -452,23 +451,24 @@ def loginResponse(response)
     }
 }
 
-def updateThermostats()
+def refreshAllThermostats()
 {
-    LogDebug("updateThermostat()");
+    LogDebug("refreshAllThermostats()");
 
     def children = getChildDevices()
     children.each 
     {
         if (it != null) 
         {
-            updateThermosat(it);
+            refreshThermosat(it);
         }
     }
 }
 
 
-def updateThermosat(com.hubitat.app.DeviceWrapper device)
+def refreshThermosat(com.hubitat.app.DeviceWrapper device)
 {
+    LogDebug("refreshThermosat")
     def deviceID = device.getDeviceNetworkId();
     def locDelminator = deviceID.indexOf('-');
     def honeywellLocation = deviceID.substring(0, (locDelminator-1))
@@ -564,4 +564,134 @@ def updateThermosat(com.hubitat.app.DeviceWrapper device)
     def humidity = reJson.indoorHumidity
     LogDebug("updateThermostats-humidity: ${humidity}")
     sendEvent(device, [name: 'humidity', value: humidity])
+}
+
+def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+{
+    LogDebug("setThermosatSetPoint")
+    def deviceID = device.getDeviceNetworkId();
+    def locDelminator = deviceID.indexOf('-');
+    def honeywellLocation = deviceID.substring(0, (locDelminator-1))
+    def honewellDeviceID = deviceID.substring((locDelminator+2))
+
+
+    if (mode == null)
+    {
+        mode=device.currentValue('thermostatMode');
+    }
+
+    if (mode == "heat")
+    {
+        mode = "Heat"
+    }
+    else if (mode == "cool")
+    {
+        mode = "Cool"
+    }
+    else if (mode == "off")
+    {
+        mode = "Off"
+    }
+    else
+    {
+        LogError("Invalid Mode Specified: ${mode}")
+        return false;
+    }
+
+    if (heatPoint == null)
+    {
+        heatPoint=device.currentValue('heatingSetpoint');
+    }
+
+    if (coolPoint == null)
+    {
+        coolPoint=device.currentValue('coolingSetpoint');
+    }
+
+    LogDebug("Attempting to Set DeviceID: ${honewellDeviceID}, With LocationID: ${honeywellLocation}");
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+
+    def headers = [
+                    Authorization: 'Bearer ' + state.access_token,
+                    "Content-Type": "application/json"
+                    ]
+    def body = [
+            mode:mode, 
+            autoChangeoverActive:autoChangeoverActive, 
+            heatSetpoint:heatPoint, 
+            coolSetPoint:coolPoint]
+
+    def params = [ uri: uri, headers: headers, body: body]
+    LogDebug("setThermosat-params ${params}")
+
+    try
+    {
+        httpPostJson(params) { response -> LogInfo("SetThermostate Response: ${response.getStatus()}")}
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("Set Api Call failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+
+    refreshThermosat(device)
+}
+
+def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
+{
+    LogDebug("setThermosatFan")
+    def deviceID = device.getDeviceNetworkId();
+    def locDelminator = deviceID.indexOf('-');
+    def honeywellLocation = deviceID.substring(0, (locDelminator-1))
+    def honewellDeviceID = deviceID.substring((locDelminator+2))
+
+
+    if (fan == null)
+    {
+        fan=device.('thermostatFanMode');
+    }
+
+    if (fan == "auto")
+    {
+        fan = "Auto"
+    }
+    else if (fan == "on")
+    {
+        fan = "On"
+    }
+    else if (fan == "circulate")
+    {
+        fan = "Circulate"
+    }
+    else
+    {
+        LogError("Invalid Fan Mode Specified: ${fan}")
+        return false;
+    }
+
+
+    LogDebug("Attempting to Set Fan For DeviceID: ${honewellDeviceID}, With LocationID: ${honeywellLocation}");
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '/fan' + '?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+
+    def headers = [
+                    Authorization: 'Bearer ' + state.access_token,
+                    "Content-Type": "application/json"
+                    ]
+    def body = [
+            mode:fan]
+
+    def params = [ uri: uri, headers: headers, body: body]
+    LogDebug("setThermosat-params ${params}")
+
+    try
+    {
+        httpPostJson(params) { response -> LogInfo("SetThermostate Response: ${response.getStatus()}")}
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("Set Fan Call failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+
+    refreshThermosat(device)
 }

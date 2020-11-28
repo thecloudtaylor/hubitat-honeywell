@@ -82,11 +82,16 @@ void auto()
 void cool()
 {
     LogDebug("cool called");
+
+    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+    parent.setThermosatSetPoint(device, "cool", false, null, null);
 }
 
 void emergencyHeat()
 {
     LogDebug("emergencyHeat called");
+
+    LogWarn("EmergancyHeat Not Supported")
     
 }
 
@@ -108,23 +113,35 @@ void fanOn()
 void heat()
 {
     LogDebug("heat called");
+
+    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+    parent.setThermosatSetPoint(device, "heat", false, null, null);
 }
 
 void off()
 {
     LogDebug("off called");
+
+    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+    parent.setThermosatSetPoint(device, "off", false, null, null);
 }
 
 //Defined Command : temperature required (NUMBER) - Cooling setpoint in degrees
 void setCoolingSetpoint(temperature)
 {
     LogDebug("setCoolingSetpoint called");
+    
+    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+    parent.setThermosatSetPoint(device, null, false, null, temperature);
 }
 
 //Defined Command : temperature required (NUMBER) - Heating setpoint in degrees
 void setHeatingSetpoint(temperature)
 {
     LogDebug("setHeatingSetpoint called");
+
+    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+    parent.setThermosatSetPoint(device, null, false, temperature, null);
 }
 
 //Defined Command : JSON_OBJECT (JSON_OBJECT) - JSON_OBJECT
@@ -137,16 +154,21 @@ void setSchedule(JSON_OBJECT)
 void setThermostatFanMode(fanmode)
 {
     LogDebug("setThermostatFanMode called");
+    
+    parent.setThermosatFan(device, fanmode);
 }
 
 //Defined Command : thermostatmode required (ENUM) - Thermostat mode to set
 void setThermostatMode(thermostatmode)
 {
     LogDebug("setThermostatMode called");
+
+    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+    parent.setThermosatSetPoint(device, thermostatmode, false, null, null);
 }
 
 void refresh()
 {
     LogDebug("Refresh called");
-    parent.updateThermosat(device)
+    parent.refreshThermosat(device)
 }
