@@ -81,6 +81,9 @@ def debugPage() {
         section {
             input 'refreshDevices', 'button', title: 'Refresh all devices', submitOnChange: true
         }
+        section {
+            input 'initialize', 'button', title: 'initialize', submitOnChange: true
+        }
     }
 }
 
@@ -119,7 +122,6 @@ def initialize()
     LogInfo("Initializing Honeywell Home.");
     unschedule()
     refreshToken()
-    runEvery30Minutes refreshToken
     runEvery15Minutes refreshAllThermostats
 }
 
@@ -255,6 +257,9 @@ def appButtonHandler(btn) {
         break
     case 'refreshDevices':
         refreshAllThermostats()
+        break
+    case 'initialize':
+        initialize()
         break
     }
 }
@@ -406,7 +411,7 @@ def handleAuthRedirect()
 
 def refreshToken()
 {
-    LogDebug("getToken()");
+    LogDebug("refreshToken()");
 
     if (state.refresh_token != null)
     {
@@ -436,8 +441,6 @@ def refreshToken()
     {
         LogError("Failed to refresh token, refresh token null.")
     }
-
-    runEvery30Minutes refreshToken
 }
 
 def loginResponse(response) 
@@ -453,6 +456,12 @@ def loginResponse(response)
     {
         state.access_token = reJson.access_token;
         state.refresh_token = reJson.refresh_token;
+        
+        def runTime = new Date()
+        def expireTime = (Integer.parseInt(reJson.expires_in) - 100)
+        runTime.setSeconds(expireTime)
+        LogDebug("TokenRefresh Scheduled at: ${runTime}")
+        schedule(runTime, refreshToken)
     }
     else
     {
