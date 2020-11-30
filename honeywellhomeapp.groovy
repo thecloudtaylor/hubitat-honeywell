@@ -484,6 +484,38 @@ def refreshAllThermostats()
     }
 }
 
+def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceWrapper device, optionalUnits=null, optionalMakeLowerMap=false, optionalMakeLowerString=false)
+{
+    LogDebug("refreshHelper() cloudString:${cloudString} - deviceString:${deviceString} - device:${device} - optionalUnits:${optionalUnits} - optionalMakeLowerMap:${optionalMakeLower} -optionalMakeLowerString:${optionalMakeLower}")
+    try
+    {
+        def value = jsonString.get(cloudString)
+        LogDebug("updateThermostats-${cloudString}: ${value}")
+
+        if (optionalMakeLowerMap)
+        {
+            def lowerCaseValues = []
+            value.each {m -> lowerCaseValues.add(m.toLowerCase())}
+            value = lowerCaseValues
+        }
+        if (optionalMakeLowerString)
+        {
+            value = value.toLowerCase()
+        }
+        if (optionalUnits != null)
+        {
+            sendEvent(device, [name: deviceString, value: value, unit: optionalUnits])
+        }
+        else
+        {
+            sendEvent(device, [name: deviceString, value: value])
+        }
+    }
+    catch (java.lang.NullPointerException e)
+    {
+        LogDebug("Thermostate Does not Support: ${cloudString}")
+    }
+}
 
 def refreshThermosat(com.hubitat.app.DeviceWrapper device)
 {
@@ -526,45 +558,14 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     }
     LogDebug("updateThermostats-tempUnits: ${tempUnits}")
 
-    def indoorTemperature = reJson.indoorTemperature
-    LogDebug("updateThermostats-indoorTemperature: ${indoorTemperature}")
-    sendEvent(device, [name: 'temperature', value: indoorTemperature, unit: tempUnits])
-
-    def heatingSetpoint = reJson.changeableValues.heatSetpoint
-    LogDebug("updateThermostats-heatSetpoint: ${heatingSetpoint}")
-    sendEvent(device, [name: 'heatingSetpoint', value: heatingSetpoint, unit: tempUnits])
-
-    def coolingSetpoint = reJson.changeableValues.coolSetpoint
-    LogDebug("updateThermostats-coolingSetpoint: ${coolingSetpoint}")
-    sendEvent(device, [name: 'coolingSetpoint', value: coolingSetpoint, unit: tempUnits])
-
-    try
-    {
-        def supportedThermostatFanModes = reJson.settings.fan.allowedModes
-        def lowerCaseSupportedFanModes = []
-        supportedThermostatFanModes.each {m -> lowerCaseSupportedFanModes.add(m.toLowerCase())}
-        LogDebug("updateThermostats-supportedThermostatFanModes: ${lowerCaseSupportedFanModes}")
-        sendEvent(device, [name: 'supportedThermostatFanModes', value: lowerCaseSupportedFanModes])
-    }
-    catch (java.lang.NullPointerException e)
-    {
-        LogDebug("Thermostate Does not Support: supportedThermostatFanModes")
-    }
-
-
-    def supportedThermostatModes = reJson.allowedModes
-    def lowerCaseSupportedThermostatModes = []
-    supportedThermostatModes.each {m -> lowerCaseSupportedThermostatModes.add(m.toLowerCase())}
-    LogDebug("updateThermostats-supportedThermostatModes: ${lowerCaseSupportedThermostatModes}")
-    sendEvent(device, [name: 'supportedThermostatModes', value: lowerCaseSupportedThermostatModes])
-
-    def thermostatMode = (reJson.changeableValues.mode).toLowerCase();
-    LogDebug("updateThermostats-thermostatMode: ${thermostatMode}")
-    sendEvent(device, [name: 'thermostatMode', value: thermostatMode])
-
-    def thermostatFanMode = (reJson.settings.fan.changeableValues.mode).toLowerCase();
-    LogDebug("updateThermostats-thermostatFanMode: ${thermostatFanMode}")
-    sendEvent(device, [name: 'thermostatFanMode', value: thermostatFanMode])
+    refreshHelper(reJson, "indoorTemperature", "temperature", device, tempUnits, false, false)
+    refreshHelper(reJson.changeableValues, "heatSetpoint", "heatingSetpoint", device, tempUnits, false, false)
+    refreshHelper(reJson.changeableValues, "coolSetpoint", "coolingSetpoint", device, tempUnits, false, false)
+    refreshHelper(reJson.settings.fan, "allowedModes", "supportedThermostatFanModes", device, null, true, false)
+    refreshHelper(reJson, "allowedModes", "supportedThermostatModes", device, null, true, false)
+    refreshHelper(reJson.changeableValues, "mode", "thermostatMode", device, null, false, true)
+    refreshHelper(reJson.settings.fan.changeableValues, "mode", "thermostatFanMode", device, null, false, true)
+    refreshHelper(reJson, "indoorHumidity", "humidity", device, null, false, false)
 
     def operationStatus = reJson.operationStatus.mode
     def formatedOperationStatus =''
@@ -588,9 +589,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     LogDebug("updateThermostats-thermostatOperatingState: ${formatedOperationStatus}")
     sendEvent(device, [name: 'thermostatOperatingState', value: formatedOperationStatus])
 
-    def humidity = reJson.indoorHumidity
-    LogDebug("updateThermostats-humidity: ${humidity}")
-    sendEvent(device, [name: 'humidity', value: humidity])
+
 }
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
@@ -649,7 +648,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
             mode:mode, 
             autoChangeoverActive:autoChangeoverActive, 
             heatSetpoint:heatPoint, 
-            coolSetPoint:coolPoint]
+            coolSetpoint:coolPoint]
     }
     else
     {
@@ -657,7 +656,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
             mode:mode, 
             thermostatSetpointStatus:"TemporaryHold", 
             heatSetpoint:heatPoint, 
-            coolSetPoint:coolPoint]
+            coolSetpoint:coolPoint]
     }
 
     def params = [ uri: uri, headers: headers, body: body]
