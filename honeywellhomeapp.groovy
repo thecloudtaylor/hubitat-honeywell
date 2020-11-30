@@ -642,9 +642,10 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
                     Authorization: 'Bearer ' + state.access_token,
                     "Content-Type": "application/json"
                     ]
+    def body = []
     if (honewellDeviceID.startsWith("TCC"))
     {
-        def body = [
+        body = [
             mode:mode, 
             autoChangeoverActive:autoChangeoverActive, 
             heatSetpoint:heatPoint, 
@@ -652,7 +653,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     }
     else
     {
-        def body = [
+        body = [
             mode:mode, 
             thermostatSetpointStatus:"TemporaryHold", 
             heatSetpoint:heatPoint, 
