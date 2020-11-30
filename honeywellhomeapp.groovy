@@ -642,7 +642,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
                     Authorization: 'Bearer ' + state.access_token,
                     "Content-Type": "application/json"
                     ]
-    if (honewellDeviceID.startsWith("TCC")
+    if (honewellDeviceID.startsWith("TCC"))
     {
         def body = [
             mode:mode, 
