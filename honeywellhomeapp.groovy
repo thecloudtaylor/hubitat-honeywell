@@ -538,11 +538,19 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     LogDebug("updateThermostats-coolingSetpoint: ${coolingSetpoint}")
     sendEvent(device, [name: 'coolingSetpoint', value: coolingSetpoint, unit: tempUnits])
 
-    def supportedThermostatFanModes = reJson.settings.fan.allowedModes
-    def lowerCaseSupportedFanModes = []
-    supportedThermostatFanModes.each {m -> lowerCaseSupportedFanModes.add(m.toLowerCase())}
-    LogDebug("updateThermostats-supportedThermostatFanModes: ${lowerCaseSupportedFanModes}")
-    sendEvent(device, [name: 'supportedThermostatFanModes', value: lowerCaseSupportedFanModes])
+    try
+    {
+        def supportedThermostatFanModes = reJson.settings.fan.allowedModes
+        def lowerCaseSupportedFanModes = []
+        supportedThermostatFanModes.each {m -> lowerCaseSupportedFanModes.add(m.toLowerCase())}
+        LogDebug("updateThermostats-supportedThermostatFanModes: ${lowerCaseSupportedFanModes}")
+        sendEvent(device, [name: 'supportedThermostatFanModes', value: lowerCaseSupportedFanModes])
+    }
+    catch (java.lang.NullPointerException e)
+    {
+        LogDebug("Thermostate Does not Support: supportedThermostatFanModes")
+    }
+
 
     def supportedThermostatModes = reJson.allowedModes
     def lowerCaseSupportedThermostatModes = []
@@ -634,11 +642,22 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
                     Authorization: 'Bearer ' + state.access_token,
                     "Content-Type": "application/json"
                     ]
-    def body = [
+    if (honewellDeviceID.startsWith("TCC")
+    {
+        def body = [
             mode:mode, 
             autoChangeoverActive:autoChangeoverActive, 
             heatSetpoint:heatPoint, 
             coolSetPoint:coolPoint]
+    }
+    else
+    {
+        def body = [
+            mode:mode, 
+            thermostatSetpointStatus:"TemporaryHold", 
+            heatSetpoint:heatPoint, 
+            coolSetPoint:coolPoint]
+    }
 
     def params = [ uri: uri, headers: headers, body: body]
     LogDebug("setThermosat-params ${params}")
