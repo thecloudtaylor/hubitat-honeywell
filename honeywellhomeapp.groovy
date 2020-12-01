@@ -488,11 +488,9 @@ def loginResponse(response)
         state.access_token = reJson.access_token;
         state.refresh_token = reJson.refresh_token;
         
-        def runTime = new Date()
         def expireTime = (Integer.parseInt(reJson.expires_in) - 100)
-        runTime.setSeconds(expireTime)
         LogDebug("TokenRefresh Scheduled at: ${runTime}")
-        runOnce(runTime, refreshToken)
+        runIn(expireTime, refreshToken)
     }
     else
     {
@@ -513,10 +511,7 @@ def refreshAllThermostats()
         }
     }
 
-    def runTime = new Date()
-    runTime.setMinutes(15)
-    LogDebug("TokenRefresh Scheduled at: ${runTime}")
-    runOnce(runTime, refreshAllThermostats)
+    runIn(900, refreshAllThermostats)
 }
 
 def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceWrapper device, optionalUnits=null, optionalMakeLowerMap=false, optionalMakeLowerString=false)
@@ -524,7 +519,6 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
     LogDebug("refreshHelper() cloudString:${cloudString} - deviceString:${deviceString} - device:${device} - optionalUnits:${optionalUnits} - optionalMakeLowerMap:${optionalMakeLower} -optionalMakeLowerString:${optionalMakeLower}")
     try
     {
-
         def value = jsonString.get(cloudString)
         LogDebug("updateThermostats-${cloudString}: ${value}")
         if (optionalMakeLowerMap)
@@ -623,8 +617,6 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
 
     LogDebug("updateThermostats-thermostatOperatingState: ${formatedOperationStatus}")
     sendEvent(device, [name: 'thermostatOperatingState', value: formatedOperationStatus])
-
-
 }
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
@@ -703,6 +695,12 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
+        if (e.getStatusCode() == 401)
+        {
+            LogWarn('Authorization token expired, will refresh and retry.')
+            refreshToken()
+            setThermosatSetPoint(device, mode, autoChangeoverActive, heatPoint, coolPoint)
+        }
         LogError("Set Api Call failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
