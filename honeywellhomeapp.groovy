@@ -179,7 +179,7 @@ def connectToHoneywell()
             } 
         }
     }
-    catch (groovyx.net.http.HttpResponseException e) 
+    catch (groovyx.net.http.HttpResponseException e)
     {
         LogError("API Auth failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
@@ -302,6 +302,37 @@ def discoverDevices()
         LogError("Location Discover failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return;
     }
+
+    reJson.each {locations ->
+        def locationID = locations.locationID.toString()
+        LogDebug("LocationID: ${locationID}");
+        locations.devices.each {dev ->
+            LogDebug("DeviceID: ${dev.deviceID.toString()}")
+            LogDebug("DeviceModel: ${dev.deviceModel.toString()}")
+            if (dev.deviceClass == "Thermostat") {
+                try {
+                    def newDevice = addChildDevice(
+                            'thecloudtaylor',
+                            'Honeywell Home Thermostat',
+                            "${locationID} - ${dev.deviceID.toString()}",
+                            [
+                                    name : "Honeywell - ${dev.deviceModel.toString()} - ${dev.deviceID.toString()}",
+                                    label: dev.userDefinedDeviceName.toString()
+                            ])
+
+                    refreshThermosat(newDevice)
+                }
+                catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
+                    "${e.message} - you need to install the appropriate driver: ${device.type}"
+                }
+                catch (IllegalArgumentException ignored) {
+                    //Intentionally ignored.  Expected if device id already exists in HE.
+                }
+            }
+        }
+
+    }
+
 
     //BugBug: There could be multiple locations. I should be checking each.
     def locationID = reJson.locationID[0].toString()
@@ -489,9 +520,9 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
     LogDebug("refreshHelper() cloudString:${cloudString} - deviceString:${deviceString} - device:${device} - optionalUnits:${optionalUnits} - optionalMakeLowerMap:${optionalMakeLower} -optionalMakeLowerString:${optionalMakeLower}")
     try
     {
+
         def value = jsonString.get(cloudString)
         LogDebug("updateThermostats-${cloudString}: ${value}")
-
         if (optionalMakeLowerMap)
         {
             def lowerCaseValues = []
