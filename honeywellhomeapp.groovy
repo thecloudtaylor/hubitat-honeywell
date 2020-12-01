@@ -123,7 +123,6 @@ def initialize()
     unschedule()
     refreshToken()
     refreshAllThermostats()
-    runEvery15Minutes(refreshAllThermostats)
 }
 
 def updated() 
@@ -513,6 +512,10 @@ def refreshAllThermostats()
             refreshThermosat(it);
         }
     }
+
+    def runTime = new Date()
+    runTime.setMinutes(15)
+    schedule(runTime, refreshAllThermostats)
 }
 
 def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceWrapper device, optionalUnits=null, optionalMakeLowerMap=false, optionalMakeLowerString=false)
