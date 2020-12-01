@@ -492,7 +492,7 @@ def loginResponse(response)
         def expireTime = (Integer.parseInt(reJson.expires_in) - 100)
         runTime.setSeconds(expireTime)
         LogDebug("TokenRefresh Scheduled at: ${runTime}")
-        schedule(runTime, refreshToken)
+        runOnce(runTime, refreshToken)
     }
     else
     {
@@ -515,7 +515,8 @@ def refreshAllThermostats()
 
     def runTime = new Date()
     runTime.setMinutes(15)
-    schedule(runTime, refreshAllThermostats)
+    LogDebug("TokenRefresh Scheduled at: ${runTime}")
+    runOnce(runTime, refreshAllThermostats)
 }
 
 def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceWrapper device, optionalUnits=null, optionalMakeLowerMap=false, optionalMakeLowerString=false)
