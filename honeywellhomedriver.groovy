@@ -29,6 +29,9 @@ metadata {
         //Maybe?
 		capability "Sensor"
 		attribute "thermostatFanState", "string"
+        attribute "autoChangeoverActive", "enum", ["true", "false"]
+        attribute "allowedModes", "enum", ["EmergencyHeat", "Heat", "Off", "Cool","Auto"]
+
     }
 
     preferences{
@@ -94,8 +97,9 @@ void cool()
 {
     LogDebug("cool called");
 
+    def autoChangeoverActive = device.autoChangeoverActive
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, "cool", false, null, null);
+    parent.setThermosatSetPoint(device, "cool", autoChangeoverActive, null, null);
 }
 
 void emergencyHeat()
@@ -125,8 +129,10 @@ void heat()
 {
     LogDebug("heat called");
 
+    def autoChangeoverActive = device.autoChangeoverActive
+
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, "heat", false, null, null);
+    parent.setThermosatSetPoint(device, "heat", autoChangeoverActive, null, null);
 }
 
 void off()

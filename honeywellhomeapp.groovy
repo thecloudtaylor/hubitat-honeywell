@@ -558,11 +558,13 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     refreshHelper(reJson, "indoorTemperature", "temperature", device, tempUnits, false, false)
     refreshHelper(reJson, "allowedModes", "supportedThermostatModes", device, null, true, false)
     refreshHelper(reJson, "indoorHumidity", "humidity", device, null, false, false)
+    refreshHelper(reJson, "allowedModes", "allowedModes", device, null, false, false)
     if (reJson.containsKey("changeableValues"))
     {
         refreshHelper(reJson.changeableValues, "heatSetpoint", "heatingSetpoint", device, tempUnits, false, false)
         refreshHelper(reJson.changeableValues, "coolSetpoint", "coolingSetpoint", device, tempUnits, false, false)
         refreshHelper(reJson.changeableValues, "mode", "thermostatMode", device, null, false, true)
+        refreshHelper(reJson.changeableValues, "autoChangeoverActive", "autoChangeoverActive", device, null, false, false)
     }
     if (reJson.containsKey("settings") && reJson.settings.containsKey("fan"))
     {
@@ -598,7 +600,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
 {
-    LogDebug("setThermosatSetPoint")
+    LogDebug("setThermosatSetPoint()")
     def deviceID = device.getDeviceNetworkId();
     def locDelminator = deviceID.indexOf('-');
     def honeywellLocation = deviceID.substring(0, (locDelminator-1))
@@ -646,22 +648,28 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
                     "Content-Type": "application/json"
                     ]
     def body = []
-    if (honewellDeviceID.startsWith("TCC"))
+
+
+    // For LCC devices thermostatSetpointStatus = "NoHold" will return to schedule. "TemporaryHold" will hold the set temperature until "nextPeriodTime". "PermanentHold" will hold the setpoint until user requests another change.
+    // BugBug: Need to include nextPeriodTime if TemporaryHoldIs true
+    if (honewellDeviceID.startsWith("LCC"))
     {
-        body = [
-            mode:mode, 
+    body = [
+            mode:mode,
+            autoChangeoverActive:autoChangeoverActive, 
+            thermostatSetpointStatus:"NoHold", 
+            heatSetpoint:heatPoint, 
+            coolSetpoint:coolPoint]
+    }
+    else //TCC model
+    {
+    body = [
+            mode:mode,
             autoChangeoverActive:autoChangeoverActive, 
             heatSetpoint:heatPoint, 
             coolSetpoint:coolPoint]
     }
-    else
-    {
-        body = [
-            mode:mode, 
-            thermostatSetpointStatus:"TemporaryHold", 
-            heatSetpoint:heatPoint, 
-            coolSetpoint:coolPoint]
-    }
+    
 
     def params = [ uri: uri, headers: headers, body: body]
     LogDebug("setThermosat-params ${params}")
