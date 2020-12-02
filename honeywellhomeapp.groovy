@@ -331,39 +331,6 @@ def discoverDevices()
         }
 
     }
-
-
-    //BugBug: There could be multiple locations. I should be checking each.
-    def locationID = reJson.locationID[0].toString()
-    LogDebug("LocationID: ${locationID}");
-
-    //BugBug: Need to Make Sure Each is a Thermosate
-    reJson.devices.each {
-        LogDebug("DeviceID: ${it.deviceID[0].toString()}")
-        LogDebug("DeviceModel: ${it.deviceModel[0].toString()}")
-
-        try 
-        {
-            def newDevice = addChildDevice(
-                'thecloudtaylor',
-                'Honeywell Home Thermostat',
-                "${locationID} - ${it.deviceID[0].toString()}",
-                [
-                    name: "Honeywell - ${it.deviceModel[0].toString()} - ${it.deviceID[0].toString()}",
-                    label: it.userDefinedDeviceName[0].toString()
-                ])
-            
-             refreshThermosat(newDevice)
-        } 
-        catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
-        {
-            "${e.message} - you need to install the appropriate driver: ${device.type}"
-        } 
-        catch (IllegalArgumentException ignored) 
-        {
-            //Intentionally ignored.  Expected if device id already exists in HE.
-        }
-    }
 }
 
 def discoverDevicesCallback(resp, data)
@@ -516,9 +483,10 @@ def refreshAllThermostats()
 
 def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceWrapper device, optionalUnits=null, optionalMakeLowerMap=false, optionalMakeLowerString=false)
 {
-    LogDebug("refreshHelper() cloudString:${cloudString} - deviceString:${deviceString} - device:${device} - optionalUnits:${optionalUnits} - optionalMakeLowerMap:${optionalMakeLower} -optionalMakeLowerString:${optionalMakeLower}")
     try
     {
+        LogDebug("refreshHelper() cloudString:${cloudString} - deviceString:${deviceString} - device:${device} - optionalUnits:${optionalUnits} - optionalMakeLowerMap:${optionalMakeLower} -optionalMakeLowerString:${optionalMakeLower}")
+
         def value = jsonString.get(cloudString)
         LogDebug("updateThermostats-${cloudString}: ${value}")
         if (optionalMakeLowerMap)
@@ -542,7 +510,7 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
     }
     catch (java.lang.NullPointerException e)
     {
-        LogDebug("Thermostate Does not Support: ${cloudString}")
+        LogDebug("Thermostate Does not Support: ${deviceString} (${cloudString})")
     }
 }
 
@@ -588,13 +556,22 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     LogDebug("updateThermostats-tempUnits: ${tempUnits}")
 
     refreshHelper(reJson, "indoorTemperature", "temperature", device, tempUnits, false, false)
-    refreshHelper(reJson.changeableValues, "heatSetpoint", "heatingSetpoint", device, tempUnits, false, false)
-    refreshHelper(reJson.changeableValues, "coolSetpoint", "coolingSetpoint", device, tempUnits, false, false)
-    refreshHelper(reJson.settings.fan, "allowedModes", "supportedThermostatFanModes", device, null, true, false)
     refreshHelper(reJson, "allowedModes", "supportedThermostatModes", device, null, true, false)
-    refreshHelper(reJson.changeableValues, "mode", "thermostatMode", device, null, false, true)
-    refreshHelper(reJson.settings.fan.changeableValues, "mode", "thermostatFanMode", device, null, false, true)
     refreshHelper(reJson, "indoorHumidity", "humidity", device, null, false, false)
+    if (reJson.containsKey("changeableValues"))
+    {
+        refreshHelper(reJson.changeableValues, "heatSetpoint", "heatingSetpoint", device, tempUnits, false, false)
+        refreshHelper(reJson.changeableValues, "coolSetpoint", "coolingSetpoint", device, tempUnits, false, false)
+        refreshHelper(reJson.changeableValues, "mode", "thermostatMode", device, null, false, true)
+    }
+    if (reJson.containsKey("settings") && reJson.settings.containsKey("fan"))
+    {
+        refreshHelper(reJson.settings.fan, "allowedModes", "supportedThermostatFanModes", device, null, true, false)
+        if (reJson.settings.fan.containsKey("changeableValues"))
+        {
+            refreshHelper(reJson.settings.fan.changeableValues, "mode", "thermostatFanMode", device, null, false, true)
+        }
+    }
 
     def operationStatus = reJson.operationStatus.mode
     def formatedOperationStatus =''
