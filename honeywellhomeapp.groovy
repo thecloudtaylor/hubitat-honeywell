@@ -9,7 +9,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
+Major Releases:
 11-25-2020 :  Initial 
 11-27-2020 :  Alpha Release (0.1)
 
@@ -31,7 +31,8 @@ definition(
         name: "Honeywell Home",
         namespace: "thecloudtaylor",
         author: "Taylor Brown",
-        description: "Honeywell Home App and Driver",
+        description: "App for Lyric (LCC) and T series (TCC) Honeywell Thermostats, requires corisponding driver.",
+        importUrl:"https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/main/honeywellhomeapp.groovy"
         category: "Thermostate",
         iconUrl: "",
         iconX2Url: "")
@@ -318,8 +319,6 @@ def discoverDevices()
                                     name : "Honeywell - ${dev.deviceModel.toString()} - ${dev.deviceID.toString()}",
                                     label: dev.userDefinedDeviceName.toString()
                             ])
-
-                    refreshThermosat(newDevice)
                 }
                 catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
                     "${e.message} - you need to install the appropriate driver: ${device.type}"

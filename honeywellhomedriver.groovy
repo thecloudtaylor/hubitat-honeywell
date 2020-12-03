@@ -9,8 +9,7 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
+Major Releases:
 11-25-2020 :  Initial 
 11-27-2020 :  Alpha Release (0.1)
 
@@ -19,12 +18,17 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "Honeywell Home Thermostat", namespace: "thecloudtaylor", author: "Taylor Brown") {
-		capability "Actuator"
-		capability "Temperature Measurement"
-		capability "Relative Humidity Measurement"
-		capability "Thermostat"
-		capability "Refresh"
+    definition (
+        name: "Honeywell Home Thermostat", 
+        description:"Driver for Lyric (LCC) and T series (TCC) Honeywell Thermostats, Requires corisponding Honeywell Home App.",
+        importUrl:"https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/main/honeywellhomedriver.groovy"
+        namespace: "thecloudtaylor", 
+        author: "Taylor Brown") {
+            capability "Actuator"
+            capability "Temperature Measurement"
+            capability "Relative Humidity Measurement"
+            capability "Thermostat"
+            capability "Refresh"
 
         //Maybe?
 		capability "Sensor"
@@ -71,6 +75,7 @@ void disableDebugLog()
 void installed()
 {
     LogInfo("Installing.");
+    refresh()
 }
 
 void uninstalled()
@@ -97,9 +102,7 @@ void cool()
 {
     LogDebug("cool called");
 
-    def autoChangeoverActive = device.autoChangeoverActive
-    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, "cool", autoChangeoverActive, null, null);
+    setThermostatMode("cool")
 }
 
 void emergencyHeat()
@@ -129,36 +132,32 @@ void heat()
 {
     LogDebug("heat called");
 
-    def autoChangeoverActive = device.autoChangeoverActive
-
-    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, "heat", autoChangeoverActive, null, null);
+    setThermostatMode("heat")
 }
 
 void off()
 {
     LogDebug("off called");
 
-    //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, "off", false, null, null);
+    setThermostatMode("off")
 }
 
 //Defined Command : temperature required (NUMBER) - Cooling setpoint in degrees
 void setCoolingSetpoint(temperature)
 {
-    LogDebug("setCoolingSetpoint called");
+    LogDebug("setCoolingSetpoint() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
     
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, null, false, null, temperature);
+    parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), null, temperature);
 }
 
 //Defined Command : temperature required (NUMBER) - Heating setpoint in degrees
 void setHeatingSetpoint(temperature)
 {
-    LogDebug("setHeatingSetpoint called");
+    LogDebug("setHeatingSetpoint() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
 
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, null, false, temperature, null);
+    parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), temperature, null);
 }
 
 //Defined Command : JSON_OBJECT (JSON_OBJECT) - JSON_OBJECT
@@ -178,10 +177,10 @@ void setThermostatFanMode(fanmode)
 //Defined Command : thermostatmode required (ENUM) - Thermostat mode to set
 void setThermostatMode(thermostatmode)
 {
-    LogDebug("setThermostatMode called");
+    LogDebug("setThermostatMode() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
 
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, thermostatmode, false, null, null);
+    parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null);
 }
 
 void refresh()
