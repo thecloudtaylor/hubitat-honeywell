@@ -485,9 +485,15 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
     try
     {
         LogDebug("refreshHelper() cloudString:${cloudString} - deviceString:${deviceString} - device:${device} - optionalUnits:${optionalUnits} - optionalMakeLowerMap:${optionalMakeLower} -optionalMakeLowerString:${optionalMakeLower}")
-
+        
         def value = jsonString.get(cloudString)
         LogDebug("updateThermostats-${cloudString}: ${value}")
+        
+        if (value == null)
+        {
+            LogDebug("Thermostate Does not Support: ${deviceString} (${cloudString})")
+            return;
+        }
         if (optionalMakeLowerMap)
         {
             def lowerCaseValues = []
