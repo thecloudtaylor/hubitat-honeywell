@@ -657,7 +657,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     {
         body = [
                 mode:mode,
-                thermostatSetpointStatus:"NoHold", 
+                thermostatSetpointStatus:"PermanentHold", 
                 heatSetpoint:heatPoint, 
                 coolSetpoint:coolPoint]
     }
