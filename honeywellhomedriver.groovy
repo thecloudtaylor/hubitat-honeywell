@@ -33,7 +33,7 @@ metadata {
         //Maybe?
 		capability "Sensor"
 		attribute "thermostatFanState", "string"
-        attribute "autoChangeoverActive", "enum", ["true", "false"]
+        attribute "autoChangeoverActive", "enum", ["unsupported", "true", "false"]
         attribute "allowedModes", "enum", ["EmergencyHeat", "Heat", "Off", "Cool","Auto"]
 
     }

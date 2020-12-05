@@ -553,6 +553,8 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
         tempUnits = "C"
     }
     LogDebug("updateThermostats-tempUnits: ${tempUnits}")
+    sendEvent(device, [name: "autoChangeoverActive", value: "unsupported"])
+
 
     refreshHelper(reJson, "indoorTemperature", "temperature", device, tempUnits, false, false)
     refreshHelper(reJson, "allowedModes", "supportedThermostatModes", device, null, true, false)
@@ -653,20 +655,23 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     // BugBug: Need to include nextPeriodTime if TemporaryHoldIs true
     if (honewellDeviceID.startsWith("LCC"))
     {
-    body = [
-            mode:mode,
-            autoChangeoverActive:autoChangeoverActive, 
-            thermostatSetpointStatus:"NoHold", 
-            heatSetpoint:heatPoint, 
-            coolSetpoint:coolPoint]
+        body = [
+                mode:mode,
+                thermostatSetpointStatus:"NoHold", 
+                heatSetpoint:heatPoint, 
+                coolSetpoint:coolPoint]
     }
     else //TCC model
     {
-    body = [
-            mode:mode,
-            autoChangeoverActive:autoChangeoverActive, 
-            heatSetpoint:heatPoint, 
-            coolSetpoint:coolPoint]
+        body = [
+                mode:mode,
+                heatSetpoint:heatPoint, 
+                coolSetpoint:coolPoint]
+    }
+
+    if (autoChangeoverActive != "unsupported")
+    {
+        body.put("autoChangeoverActive",autoChangeoverActive)
     }
     
 
