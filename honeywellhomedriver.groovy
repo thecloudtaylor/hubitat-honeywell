@@ -32,7 +32,7 @@ metadata {
 
         //Maybe?
 		capability "Sensor"
-		attribute "thermostatFanState", "string"
+		attribute "thermostatFanState", "enum", ["true", "false"]
         attribute "autoChangeoverActive", "enum", ["unsupported", "true", "false"]
         attribute "allowedModes", "enum", ["EmergencyHeat", "Heat", "Off", "Cool","Auto"]
 
@@ -96,6 +96,16 @@ void parse(String message)
 void auto()
 {
     LogDebug("auto called");
+
+    if(device.currentValue("allowedModes").contains("Auto"))
+    {
+        setThermostatMode("auto")
+    }
+    else
+    {
+        LogWarn("Auto not in the supported modes.")
+    }
+    fanAuto()
 }
 
 void cool()
@@ -116,16 +126,19 @@ void emergencyHeat()
 void fanAuto()
 {
     LogDebug("fanAuto called");
+    setThermostatFanMode("auto")
 }
 
 void fanCirculate()
 {
     LogDebug("fanCirculate called");
+    setThermostatFanMode("circulate")
 }
 
 void fanOn()
 {
     LogDebug("fanOn called");
+    setThermostatFanMode("on")
 }
 
 void heat()

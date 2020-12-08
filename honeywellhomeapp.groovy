@@ -588,6 +588,8 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
         {
             refreshHelper(reJson.settings.fan.changeableValues, "mode", "thermostatFanMode", device, null, false, true)
         }
+        refreshHelper(reJson.settings.fan, "fanRunning", "thermostatFanState", device, null, false, false)
+
     }
 
     def operationStatus = reJson.operationStatus.mode
