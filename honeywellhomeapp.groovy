@@ -40,7 +40,7 @@ definition(
 preferences 
 {
     page(name: "mainPage")
-    page(name: "debugPage", title: "Debug Options", install: true)
+    page(name: "debugPage", title: "Debug Options", install: false)
 }
 
 mappings {
@@ -51,19 +51,19 @@ mappings {
     }
 }
 
+
 def mainPage() {
-    dynamicPage(name: "mainPage", title: "Setup connection to Honeywell Home and Discover devices", install: true, uninstall: true) {
+    dynamicPage(name: "mainPage", title: "Establish connection to Honeywell Home and Discover devices", install: true, uninstall: true) {
+
+        getDiscoverButton()
+        listDiscoveredDevices()
 
         connectToHoneywell()
-        getDiscoverButton()
         
         section {
             input name: "debugOutput", type: "bool", title: "Enable Debug Logging?", defaultValue: false, submitOnChange: true
         }
-        
-        listDiscoveredDevices()
-        
-        getDebugLink()
+        getDebugLink()        
     }
 }
 
@@ -184,14 +184,14 @@ def connectToHoneywell()
         LogError("API Auth failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
-    section("Honeywell Login")
+    section
     {
         paragraph "Click below to be redirected to Honeywall to authorize Hubitat access."
         href(
             name       : 'authHref',
-            title      : 'Auth Link',
+            title      : 'Establish OAuth Link with Honeywell',
             url        : redirectLocation,
-            description: 'Click this link to authorize with Honeywell Home'
+            description: ''
         )
         //href url:redirectURL, external:true, required:false, title:"Connect to Honeywell:", description:description
     } 
@@ -203,7 +203,7 @@ def getDiscoverButton()
     {
         section 
         {
-            paragraph "Device discovery button is hidden until authorization is completed."            
+            paragraph "Device discovery and configuration is hidden until authorization is completed."            
         }
     } 
     else 
@@ -237,9 +237,17 @@ def listDiscoveredDevices() {
     }
     builder << "</ul>"
     def links = builder.toString()
-    section {
-        paragraph "Discovered devices are listed below:"
-        paragraph links
+    if (!children.isEmpty())
+    {
+        section {
+            paragraph "Discovered devices are listed below:"
+            paragraph links
+        }
+            section {
+                paragraph "Refresh interval (how often devices are automaticaly refreshed/polled):"
+
+                input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 1:"1 minute", 2:"2 minutes", 5:"5 minutes",10:"10 minutes",15:"15 minutes",30:"30 minutes",55:"55 minutes"], required: true, defaultValue: "10", submitOnChange: true
+        }
     }
 }
 
@@ -477,7 +485,16 @@ def refreshAllThermostats()
         }
     }
 
-    runIn(900, refreshAllThermostats)
+    if (refreshIntervals != "0" || refreshIntervals != null)
+    {
+        def cronString = ('0 */' + refreshIntervals + ' * ? * *')
+        LogDebug("Scheduling Refresh cronstring: ${cronString}")
+        schedule(cronString, refreshAllThermostats)
+    }
+    else
+    {
+        LogInfo("Auto Refresh Disabled.")
+    }
 }
 
 def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceWrapper device, optionalUnits=null, optionalMakeLowerMap=false, optionalMakeLowerString=false)
@@ -524,7 +541,8 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
 
 def refreshThermosat(com.hubitat.app.DeviceWrapper device)
 {
-    LogDebug("refreshThermosat")
+    LogDebug("refreshThermosat()")
+
     def deviceID = device.getDeviceNetworkId();
     def locDelminator = deviceID.indexOf('-');
     def honeywellLocation = deviceID.substring(0, (locDelminator-1))
@@ -716,7 +734,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
 
 def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
 {
-    LogDebug("setThermosatFan"  )
+    LogDebug("setThermosatFan()"  )
     def deviceID = device.getDeviceNetworkId();
     def locDelminator = deviceID.indexOf('-');
     def honeywellLocation = deviceID.substring(0, (locDelminator-1))
