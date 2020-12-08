@@ -492,7 +492,7 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
         if (value == null)
         {
             LogDebug("Thermostate Does not Support: ${deviceString} (${cloudString})")
-            return;
+            return false;
         }
         if (optionalMakeLowerMap)
         {
@@ -516,7 +516,10 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
     catch (java.lang.NullPointerException e)
     {
         LogDebug("Thermostate Does not Support: ${deviceString} (${cloudString})")
+        return false;
     }
+
+    return true;
 }
 
 def refreshThermosat(com.hubitat.app.DeviceWrapper device)
@@ -559,20 +562,25 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
         tempUnits = "C"
     }
     LogDebug("updateThermostats-tempUnits: ${tempUnits}")
-    sendEvent(device, [name: "autoChangeoverActive", value: "unsupported"])
-
 
     refreshHelper(reJson, "indoorTemperature", "temperature", device, tempUnits, false, false)
     refreshHelper(reJson, "allowedModes", "supportedThermostatModes", device, null, true, false)
     refreshHelper(reJson, "indoorHumidity", "humidity", device, null, false, false)
     refreshHelper(reJson, "allowedModes", "allowedModes", device, null, false, false)
-    if (reJson.containsKey("changeableValues"))
+    refreshHelper(reJson.changeableValues, "heatSetpoint", "heatingSetpoint", device, tempUnits, false, false)
+    refreshHelper(reJson.changeableValues, "coolSetpoint", "coolingSetpoint", device, tempUnits, false, false)
+    refreshHelper(reJson.changeableValues, "mode", "thermostatMode", device, null, false, true)
+
+    if (reJson.changeableValues.containsKey("autoChangeoverActive"))
     {
-        refreshHelper(reJson.changeableValues, "heatSetpoint", "heatingSetpoint", device, tempUnits, false, false)
-        refreshHelper(reJson.changeableValues, "coolSetpoint", "coolingSetpoint", device, tempUnits, false, false)
-        refreshHelper(reJson.changeableValues, "mode", "thermostatMode", device, null, false, true)
         refreshHelper(reJson.changeableValues, "autoChangeoverActive", "autoChangeoverActive", device, null, false, false)
     }
+    else
+    {
+        LogDebug("Thermostat does not support auto change over")
+        sendEvent(device, [name: "autoChangeoverActive", value: "unsupported"])
+    }
+
     if (reJson.containsKey("settings") && reJson.settings.containsKey("fan"))
     {
         refreshHelper(reJson.settings.fan, "allowedModes", "supportedThermostatFanModes", device, null, true, false)
@@ -701,6 +709,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     }
 
     refreshThermosat(device)
+    return true;
 }
 
 def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
@@ -760,4 +769,5 @@ def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
     }
 
     refreshThermosat(device)
+    return true;
 }

@@ -148,7 +148,12 @@ void setCoolingSetpoint(temperature)
     LogDebug("setCoolingSetpoint() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
     
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), null, temperature);
+    if (!parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), null, temperature))
+    {
+        LogInfo("Set cooling point failed, attempting a refresh and re-try.")
+        parent.refreshThermosat(device)
+        parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), null, temperature)
+    }
 }
 
 //Defined Command : temperature required (NUMBER) - Heating setpoint in degrees
@@ -157,7 +162,12 @@ void setHeatingSetpoint(temperature)
     LogDebug("setHeatingSetpoint() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
 
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), temperature, null);
+    if (!parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), temperature, null))
+    {
+        LogInfo("Set heating point failed, attempting a refresh and re-try.")
+        parent.refreshThermosat(device)
+        parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), temperature, null)
+    }
 }
 
 //Defined Command : JSON_OBJECT (JSON_OBJECT) - JSON_OBJECT
@@ -171,7 +181,12 @@ void setThermostatFanMode(fanmode)
 {
     LogDebug("setThermostatFanMode called");
     
-    parent.setThermosatFan(device, fanmode);
+    if(!parent.setThermosatFan(device, fanmode))
+    {
+        LogInfo("Set fan mode failed, attempting a refresh and re-try.")
+        parent.refreshThermosat(device)
+        parent.setThermosatFan(device, fanmode);
+    }
 }
 
 //Defined Command : thermostatmode required (ENUM) - Thermostat mode to set
@@ -180,7 +195,12 @@ void setThermostatMode(thermostatmode)
     LogDebug("setThermostatMode() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
 
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null);
+    if (!parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null))
+    {
+        LogInfo("Set thermostate point failed, attempting a refresh and re-try.")
+        parent.refreshThermosat(device)
+        parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null);
+    }
 }
 
 void refresh()
