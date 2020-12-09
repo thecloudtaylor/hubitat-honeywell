@@ -485,7 +485,7 @@ def refreshAllThermostats()
         }
     }
 
-    if (refreshIntervals != "0" || refreshIntervals != null)
+    if (refreshIntervals != "0" && refreshIntervals != null)
     {
         def cronString = ('0 */' + refreshIntervals + ' * ? * *')
         LogDebug("Scheduling Refresh cronstring: ${cronString}")
