@@ -105,7 +105,6 @@ void auto()
     {
         LogWarn("Auto not in the supported modes.")
     }
-    fanAuto()
 }
 
 void cool()
@@ -163,9 +162,13 @@ void setCoolingSetpoint(temperature)
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
     if (!parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), null, temperature))
     {
-        LogInfo("Set cooling point failed, attempting a refresh and re-try.")
+        LogWarn("Set cooling point failed, attempting a refresh and re-try.")
         parent.refreshThermosat(device)
         parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), null, temperature)
+    }
+    else
+    {
+        LogInfo("Cooling setpoint changed to ${temperature}")
     }
 }
 
@@ -177,9 +180,13 @@ void setHeatingSetpoint(temperature)
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
     if (!parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), temperature, null))
     {
-        LogInfo("Set heating point failed, attempting a refresh and re-try.")
+        LogWarn("Set heating point failed, attempting a refresh and re-try.")
         parent.refreshThermosat(device)
         parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), temperature, null)
+    }
+    else
+    {
+        LogInfo("Heating setpoint changed to ${temperature}")
     }
 }
 
@@ -194,11 +201,22 @@ void setThermostatFanMode(fanmode)
 {
     LogDebug("setThermostatFanMode called");
     
-    if(!parent.setThermosatFan(device, fanmode))
+    if(device.currentValue("supportedThermostatFanModes").contains(fanmode))
     {
-        LogInfo("Set fan mode failed, attempting a refresh and re-try.")
-        parent.refreshThermosat(device)
-        parent.setThermosatFan(device, fanmode);
+        if(!parent.setThermosatFan(device, fanmode))
+        {
+            LogWarn("Set fan mode failed, attempting a refresh and re-try.")
+            parent.refreshThermosat(device)
+            parent.setThermosatFan(device, fanmode);
+        }
+        else
+        {
+            LogInfo("Fan Mode Chanaged to: ${fanmode}")
+        }
+    }
+    else
+    {
+        LogWarn("${fanmode} not in the supported fan modes.")
     }
 }
 
@@ -210,9 +228,13 @@ void setThermostatMode(thermostatmode)
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
     if (!parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null))
     {
-        LogInfo("Set thermostate point failed, attempting a refresh and re-try.")
+        LogWarn("Set point failed, attempting a refresh and re-try.")
         parent.refreshThermosat(device)
         parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null);
+    }
+    else
+    {
+        LogInfo("mode changed to ${thermostatmode}")
     }
 }
 

@@ -129,6 +129,10 @@ def initialize()
 def updated() 
 {
     LogDebug("Updated with config: ${settings}");
+    if (refreshIntervals == null || refreshIntervals > 55)
+    {
+        refreshIntervals = 10;
+    }
     initialize();
 }
 
@@ -780,7 +784,7 @@ def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
 
     try
     {
-        httpPostJson(params) { response -> LogInfo("SetThermostate Response: ${response.getStatus()}")}
+        httpPostJson(params) { response -> LogDebug("SetThermostateFan Response: ${response.getStatus()}")}
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
