@@ -129,7 +129,7 @@ def initialize()
 def updated() 
 {
     LogDebug("Updated with config: ${settings}");
-    if (refreshIntervals == null || refreshIntervals > 55)
+    if (refreshIntervals == null)
     {
         refreshIntervals = 10;
     }
