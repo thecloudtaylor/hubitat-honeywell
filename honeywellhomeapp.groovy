@@ -467,7 +467,7 @@ def loginResponse(response)
         state.refresh_token = reJson.refresh_token;
         
         def expireTime = (Integer.parseInt(reJson.expires_in) - 100)
-        LogDebug("TokenRefresh Scheduled at: ${runTime}")
+        LogDebug("TokenRefresh Scheduled at: ${expireTime}")
         runIn(expireTime, refreshToken)
     }
     else
@@ -576,6 +576,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     catch (groovyx.net.http.HttpResponseException e) 
     {
         LogError("Thermosate API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return;
     }
 
     def tempUnits = "F"

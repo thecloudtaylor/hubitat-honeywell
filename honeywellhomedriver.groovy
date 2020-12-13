@@ -37,8 +37,13 @@ metadata {
         attribute "allowedModes", "enum", ["EmergencyHeat", "Heat", "Off", "Cool","Auto"]
 
     }
-
     preferences{
+        input ("heatModeEnabled", "bool", 
+                title: "Allow Heat Mode, if false heat mode will be iqnored",
+                defaultValue:true)
+        input ("coolModeEnabled", "bool", 
+                title: "Allow Cool Mode, if false heat mode will be iqnored",
+                defaultValue:true)
         input ("debugLogs", "bool", 
 			   title: "Enable debug logging", 
 			   defaultValue: false)
@@ -224,6 +229,18 @@ void setThermostatFanMode(fanmode)
 void setThermostatMode(thermostatmode)
 {
     LogDebug("setThermostatMode() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
+
+    if (thermostatmode == "heat" && !heatModeEnabled)
+    {
+        LogInfo("Heating Mode Requested but Not Allowed, Iqnoring")
+        return
+    }
+
+    if (thermostatmode == "cool" && !coolModeEnabled)
+    {
+        LogInfo("Cooling Mode Requested but Not Allowed, Iqnoring")
+        return
+    }
 
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
     if (!parent.setThermosatSetPoint(device, thermostatmode, device.currentValue("autoChangeoverActive"), null, null))
