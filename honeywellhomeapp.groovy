@@ -333,7 +333,7 @@ def discoverDevices()
                             ])
                 }
                 catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
-                    "${e.message} - you need to install the appropriate driver: ${device.type}"
+                    "${e.message} - you need to install the appropriate driver."
                 }
                 catch (IllegalArgumentException ignored) {
                     //Intentionally ignored.  Expected if device id already exists in HE.
