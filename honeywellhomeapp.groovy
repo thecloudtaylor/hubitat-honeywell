@@ -719,7 +719,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
 
     try
     {
-        httpPostJson(params) { response -> LogInfo("SetThermostate Response: ${response.getStatus()}")}
+        httpPostJson(params) { response -> LogInfo("SetThermostate() Mode: ${mode}; Heatsetpoint: ${heatPoint}; CoolPoint: ${coolPoint} API Response: ${response.getStatus()}")}
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
