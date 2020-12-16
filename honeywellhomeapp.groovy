@@ -12,6 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 Major Releases:
 11-25-2020 :  Initial 
 11-27-2020 :  Alpha Release (0.1)
+12-15-2020 :  Beta 1 Release (0.2.0)
+
 
 Considerable inspiration an example to: https://github.com/dkilgore90/google-sdm-api/
 */

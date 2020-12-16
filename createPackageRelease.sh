@@ -23,6 +23,6 @@ echo "DriverPath: $driverPath"
 echo "ReleaseNotes: $relNotes"
 
 
-hpm manifest-modify-driver --id 390cc6e1-acbb-4af3-be52-7a68e4bcc580 --version=$version --location $driverPath packageManifest.json
-hpm manifest-modify-app --id fe2bb542-854f-47b4-8d20-cde1ead99f2d --version=$version --location $appPath packageManifest.json
-hpm manifest-modify --releasenotes="$relNotes" --version=$version packageManifest.json
+hpm manifest-modify-driver --id 390cc6e1-acbb-4af3-be52-7a68e4bcc580 --version=$version --location $driverPath ../hubitat-packages/packages/honeywellManifest.json
+hpm manifest-modify-app --id fe2bb542-854f-47b4-8d20-cde1ead99f2d --version=$version --location $appPath ../hubitat-packages/packages/honeywellManifest.json
+hpm manifest-modify --releasenotes="$relNotes" --version=$version ../hubitat-packages/packages/honeywellManifest.json
