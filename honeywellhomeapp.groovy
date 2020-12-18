@@ -55,18 +55,35 @@ mappings {
 
 
 def mainPage() {
-    dynamicPage(name: "mainPage", title: "Establish connection to Honeywell Home and Discover devices", install: true, uninstall: true) {
+    dynamicPage(name: "mainPage", title: "Honeywell Home", install: true, uninstall: true) {
+        installCheck()
+        if(state.appInstalled == 'COMPLETE')
+        {   
+            section {
+                paragraph "Establish connection to Honeywell Home and Discover devices"
+            }
+            getDiscoverButton()
+            listDiscoveredDevices()
 
-        getDiscoverButton()
-        listDiscoveredDevices()
-
-        connectToHoneywell()
-        
-        section {
-            input name: "debugOutput", type: "bool", title: "Enable Debug Logging?", defaultValue: false, submitOnChange: true
-        }
-        getDebugLink()        
+            connectToHoneywell()
+            
+            section {
+                input name: "debugOutput", type: "bool", title: "Enable Debug Logging?", defaultValue: false, submitOnChange: true
+            }
+            getDebugLink()
+        }      
     }
+}
+
+def installCheck()
+{
+	state.appInstalled = app.getInstallationState() 
+	if(state.appInstalled != 'COMPLETE'){
+		section{paragraph "Please hit 'Done' to install '${app.label}' app "}
+  	}
+  	else{
+    	LogInfo("Parent Installed OK")
+  	}
 }
 
 
@@ -469,7 +486,7 @@ def loginResponse(response)
         state.refresh_token = reJson.refresh_token;
         
         def expireTime = (Integer.parseInt(reJson.expires_in) - 100)
-        LogDebug("TokenRefresh Scheduled at: ${expireTime}")
+        LogInfo("Honeywell API Token Refreshed Succesfully, Next Scheduled in: ${expireTime} sec")
         runIn(expireTime, refreshToken)
     }
     else
@@ -545,7 +562,7 @@ def refreshHelper(jsonString, cloudString, deviceString, com.hubitat.app.DeviceW
     return true;
 }
 
-def refreshThermosat(com.hubitat.app.DeviceWrapper device)
+def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
 {
     LogDebug("refreshThermosat()")
 
@@ -577,7 +594,14 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("Thermosate API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        if (e.getStatusCode() == 401 && !retry)
+        {
+            LogWarn('Authorization token expired, will refresh and retry.')
+            refreshToken()
+            refreshThermosat(device, true)
+        }
+
+        LogError("Thermosat API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return;
     }
 
@@ -640,7 +664,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device)
     sendEvent(device, [name: 'thermostatOperatingState', value: formatedOperationStatus])
 }
 
-def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
+def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null, retry=false)
 {
     LogDebug("setThermosatSetPoint()")
     def deviceID = device.getDeviceNetworkId();
@@ -725,11 +749,11 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        if (e.getStatusCode() == 401)
+        if (e.getStatusCode() == 401 && !retry)
         {
             LogWarn('Authorization token expired, will refresh and retry.')
             refreshToken()
-            setThermosatSetPoint(device, mode, autoChangeoverActive, heatPoint, coolPoint)
+            setThermosatSetPoint(device, mode, autoChangeoverActive, heatPoint, coolPoint, true)
         }
         LogError("Set Api Call failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
@@ -739,7 +763,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     return true;
 }
 
-def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
+def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null, retry=false)
 {
     LogDebug("setThermosatFan()"  )
     def deviceID = device.getDeviceNetworkId();
@@ -791,6 +815,12 @@ def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null)
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
+        if (e.getStatusCode() == 401 && !retry)
+        {
+            LogWarn('Authorization token expired, will refresh and retry.')
+            refreshToken()
+            setThermosatFan(device, fan, true)
+        }
         LogError("Set Fan Call failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
