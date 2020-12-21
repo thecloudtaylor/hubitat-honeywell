@@ -352,14 +352,44 @@ def discoverDevices()
                             ])
                 }
                 catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
-                    "${e.message} - you need to install the appropriate driver."
+                    LogInfo("${e.message} - you need to install the appropriate driver.")
                 }
                 catch (IllegalArgumentException ignored) {
                     //Intentionally ignored.  Expected if device id already exists in HE.
                 }
+                //Check this thermostat for remote sensors
+                if (dev.groups != null) {
+                    LogDebug("Checking Thermostat ${dev.deviceID.toString()} for remote sensors")
+                    dev.groups.each { group ->
+                        LogDebug("Group ID: ${group.id.toString()}")
+                        LogDebug("Group Name: ${group.name.toString()}")
+                        group.rooms.each { room ->
+                            LogDebug("Room No.: ${room.toString()}")
+                             try
+                             {
+                                def newRemoteSensor = addChildDevice(
+                                        'thecloudtaylor',
+                                        'Honeywell Home Remote Sensor',
+                                        "${locationID} - ${dev.deviceID.toString()} - ${group.id.toString()} - ${room.toString()}",
+                                        [
+                                                name : "Honeywell Home Remote Sensor",
+                                                label: "${dev.userDefinedDeviceName.toString()} Group ${group.name.toString()} Room ${room.toString()}"
+                                        ])
+                                        //TO DO: Get better name/label through API call
+                                 sendEvent(newRemoteSensor, [name: "group", value: group.id])
+                                 sendEvent(newRemoteSensor, [name: "room", value: room])
+                             }
+                             catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
+                                LogInfo("${e.message} - you need to install the appropriate driver.")
+                             }
+                             catch (IllegalArgumentException ignored) {
+                                //Intentionally ignored.  Expected if device id already exists in HE.
+                            }
+                       }
+                    }
+                }
             }
         }
-
     }
 }
 
@@ -504,7 +534,13 @@ def refreshAllThermostats()
     {
         if (it != null) 
         {
-            refreshThermosat(it);
+            // Thermostat or Sensor?
+            if (it.hasAttribute("group") && it.hasAttribute("room")) {
+                refreshRemoteSensor(it)
+            }
+            else {
+                refreshThermosat(it)
+            }
         }
     }
 
@@ -662,6 +698,11 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
 
     LogDebug("updateThermostats-thermostatOperatingState: ${formatedOperationStatus}")
     sendEvent(device, [name: 'thermostatOperatingState', value: formatedOperationStatus])
+}
+
+def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
+{
+    LogDebug("refreshRemoteSensor()")
 }
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null, retry=false)
