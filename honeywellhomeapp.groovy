@@ -142,7 +142,7 @@ def initialize()
     LogInfo("Initializing Honeywell Home.");
     unschedule()
     refreshToken()
-    refreshAllThermostats()
+    RefreshAllDevices()
 }
 
 def updated() 
@@ -288,7 +288,7 @@ def appButtonHandler(btn) {
         deleteDevices()
         break
     case 'refreshDevices':
-        refreshAllThermostats()
+        RefreshAllDevices()
         break
     case 'initialize':
         initialize()
@@ -365,19 +365,24 @@ def discoverDevices()
                         LogDebug("Group Name: ${group.name.toString()}")
                         group.rooms.each { room ->
                             LogDebug("Room No.: ${room.toString()}")
+                            if (room == 0) {
+                                return  // ignore thermostat entry
+                            }
                              try
                              {
                                 def newRemoteSensor = addChildDevice(
                                         'thecloudtaylor',
                                         'Honeywell Home Remote Sensor',
-                                        "${locationID} - ${dev.deviceID.toString()} - ${group.id.toString()} - ${room.toString()}",
+                                        "${locationID}-${dev.deviceID.toString()}-${group.id.toString()}-${room.toString()}",
                                         [
                                                 name : "Honeywell Home Remote Sensor",
-                                                label: "${dev.userDefinedDeviceName.toString()} Group ${group.name.toString()} Room ${room.toString()}"
+                                                label: "${dev.userDefinedDeviceName.toString()} Group: ${group.name.toString()} Room: ${room.toString()}"
                                         ])
                                         //TO DO: Get better name/label through API call
-                                 sendEvent(newRemoteSensor, [name: "group", value: group.id])
-                                 sendEvent(newRemoteSensor, [name: "room", value: room])
+                                 sendEvent(newRemoteSensor, [name: "groupId", value: group.id])
+                                 sendEvent(newRemoteSensor, [name: "roomId", value: room])
+                                 sendEvent(newRemoteSensor, [name: "parentDeviceId", value: dev.deviceID.toString()])
+                                 sendEvent(newRemoteSensor, [name: "locationId", value: locationID.toString()])
                              }
                              catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
                                 LogInfo("${e.message} - you need to install the appropriate driver.")
@@ -525,9 +530,9 @@ def loginResponse(response)
     }
 }
 
-def refreshAllThermostats()
+def RefreshAllDevices()
 {
-    LogDebug("refreshAllThermostats()");
+    LogDebug("RefreshAllDevices()");
 
     def children = getChildDevices()
     children.each 
@@ -535,7 +540,7 @@ def refreshAllThermostats()
         if (it != null) 
         {
             // Thermostat or Sensor?
-            if (it.hasAttribute("group") && it.hasAttribute("room")) {
+            if (it.hasAttribute("groupId") && it.hasAttribute("roomId")) {
                 refreshRemoteSensor(it)
             }
             else {
@@ -548,7 +553,7 @@ def refreshAllThermostats()
     {
         def cronString = ('0 */' + refreshIntervals + ' * ? * *')
         LogDebug("Scheduling Refresh cronstring: ${cronString}")
-        schedule(cronString, refreshAllThermostats)
+        schedule(cronString, RefreshAllDevices)
     }
     else
     {
@@ -703,6 +708,59 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
 def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
 {
     LogDebug("refreshRemoteSensor()")
+    def honeywellDeviceID = device.currentValue("parentDeviceId")
+    def honeywellLocation = device.currentValue("locationId")
+    def groupID = device.currentValue("groupId")
+    def roomID = device.currentValue("roomId")
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honeywellDeviceID + '/group/' +  groupID + '/rooms?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+    def headers = [ Authorization: 'Bearer ' + state.access_token ]
+    def contentType = 'application/json'
+    def params = [ uri: uri, headers: headers, contentType: contentType ]
+    LogDebug("Room Refresh - params ${params}")
+
+    //add error checking
+    def reJson =''
+    try
+    {
+        httpGet(params)
+                {
+                    response ->
+                        def reCode = response.getStatus();
+                        reJson = response.getData();
+                        LogDebug("reCode: {$reCode}")
+                        LogDebug("reJson: {$reJson}")
+                }
+    }
+    catch (groovyx.net.http.HttpResponseException e)
+    {
+        if (e.getStatusCode() == 401 && !retry)
+        {
+            LogWarn('Authorization token expired, will refresh and retry.')
+            refreshToken()
+            refreshRemoteSensor(device, true)
+        }
+
+        LogError("Remote Sensor API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return;
+    }
+    def tempUnits = "F"  //TODO: figure out parent's unit settings
+
+    def roomJson
+    reJson.rooms.each{ room ->
+        if (room.id == roomID) {
+            roomJson = room
+            return
+        }
+    }
+    if (roomJson == null) {
+        LogError("roomJson = null")
+        return
+    }
+    LogDebug( "roomJson: ${roomJson}")
+    //TODO: Fix accessory indexing workaround, add battery, occupancy
+    refreshHelper(roomJson.accessories[0].accessoryValue, "indoorTemperature", "temperature", device, tempUnits, false, false)
+    refreshHelper(roomJson.accessories[0].accessoryValue, "indoorHumidity", "humidity", device, null, false, false)
+    refreshHelper(roomJson, "name", "roomName", device, null, false, false)
 }
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null, retry=false)

@@ -34,8 +34,11 @@ metadata {
 			capability 	"Battery"
 			capability	"Refresh"
 
-			attribute "group", "number"
-			attribute "room", "number"
+			attribute "groupId", "number"
+			attribute "roomId", "number"
+			attribute "roomName", "string"
+			attribute "parentDeviceId", "string"
+			attribute "locationId", "string"
 	}
 	preferences {
 		section("Logging") {
