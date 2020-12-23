@@ -36,6 +36,7 @@ metadata {
 		attribute "thermostatFanState", "enum", ["true", "false"]
         attribute "autoChangeoverActive", "enum", ["unsupported", "true", "false"]
         attribute "allowedModes", "enum", ["EmergencyHeat", "Heat", "Off", "Cool","Auto"]
+        attribute "units", "enum", ["F", "C"]
 
     }
     preferences{

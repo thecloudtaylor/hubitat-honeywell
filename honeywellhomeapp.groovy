@@ -340,19 +340,21 @@ def discoverDevices()
         locations.devices.each {dev ->
             LogDebug("DeviceID: ${dev.deviceID.toString()}")
             LogDebug("DeviceModel: ${dev.deviceModel.toString()}")
+            def thermoNetId = "${locationID} - ${dev.deviceID.toString()}"
             if (dev.deviceClass == "Thermostat") {
                 try {
                     def newDevice = addChildDevice(
                             'thecloudtaylor',
                             'Honeywell Home Thermostat',
-                            "${locationID} - ${dev.deviceID.toString()}",
+                            thermoNetId,
                             [
                                     name : "Honeywell - ${dev.deviceModel.toString()} - ${dev.deviceID.toString()}",
                                     label: dev.userDefinedDeviceName.toString()
                             ])
-                }
+                 }
                 catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
                     LogInfo("${e.message} - you need to install the appropriate driver.")
+                    return
                 }
                 catch (IllegalArgumentException ignored) {
                     //Intentionally ignored.  Expected if device id already exists in HE.
@@ -376,13 +378,14 @@ def discoverDevices()
                                         "${locationID}-${dev.deviceID.toString()}-${group.id.toString()}-${room.toString()}",
                                         [
                                                 name : "Honeywell Home Remote Sensor",
-                                                label: "${dev.userDefinedDeviceName.toString()} Group: ${group.name.toString()} Room: ${room.toString()}"
+                                                label: "${dev.userDefinedDeviceName.toString()} Sensor Room: ${room.toString()}"
                                         ])
                                         //TO DO: Get better name/label through API call
                                  sendEvent(newRemoteSensor, [name: "groupId", value: group.id])
                                  sendEvent(newRemoteSensor, [name: "roomId", value: room])
                                  sendEvent(newRemoteSensor, [name: "parentDeviceId", value: dev.deviceID.toString()])
-                                 sendEvent(newRemoteSensor, [name: "locationId", value: locationID.toString()])
+                                 sendEvent(newRemoteSensor, [name: "parentDeviceNetId", value: thermoNetId])
+                                 sendEvent(newRemoteSensor, [name: "locationId", value: locationID])
                              }
                              catch (com.hubitat.app.exception.UnknownDeviceTypeException e) {
                                 LogInfo("${e.message} - you need to install the appropriate driver.")
@@ -651,6 +654,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
     {
         tempUnits = "C"
     }
+    sendEvent(device, [name: "units", value: tempUnits])
     LogDebug("updateThermostats-tempUnits: ${tempUnits}")
 
     refreshHelper(reJson, "indoorTemperature", "temperature", device, tempUnits, false, false)
@@ -716,7 +720,7 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     def headers = [ Authorization: 'Bearer ' + state.access_token ]
     def contentType = 'application/json'
     def params = [ uri: uri, headers: headers, contentType: contentType ]
-    LogDebug("Room Refresh - params ${params}")
+    LogDebug("refreshRemoteSensor - params ${params}")
 
     //add error checking
     def reJson =''
@@ -743,7 +747,19 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
         LogError("Remote Sensor API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return;
     }
-    def tempUnits = "F"  //TODO: figure out parent's unit settings
+
+    def parentDeviceNetId = device.currentValue("parentDeviceNetId")
+    def tempUnits
+    try
+    {
+        def parent = getChildDevice(parentDeviceNetId)
+        tempUnits = parent.currentValue("units")
+    }
+    catch (Exception e)
+    {
+        LogError("Thermostat driver failed to get thermo units - ${e.getLocalizedMessage()} - Is driver up to date?")
+        tempUnits = "F"
+    }
 
     def roomJson
     reJson.rooms.each{ room ->
@@ -753,13 +769,15 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
         }
     }
     if (roomJson == null) {
-        LogError("roomJson = null")
+        LogError("RefreshRemoteSensor() roomJson = null")
         return
     }
     LogDebug( "roomJson: ${roomJson}")
-    //TODO: Fix accessory indexing workaround, add battery, occupancy
+    //TO DO: Fix accessory indexing workaround (if possible)
     refreshHelper(roomJson.accessories[0].accessoryValue, "indoorTemperature", "temperature", device, tempUnits, false, false)
     refreshHelper(roomJson.accessories[0].accessoryValue, "indoorHumidity", "humidity", device, null, false, false)
+    refreshHelper(roomJson.accessories[0].accessoryValue, "batteryStatus", "batterystatus", device, null, false, false)
+    refreshHelper(roomJson.accessories[0].accessoryValue, "occupancyDet", "occupied", device, null, false, false)
     refreshHelper(roomJson, "name", "roomName", device, null, false, false)
 }
 

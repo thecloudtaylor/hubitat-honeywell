@@ -31,14 +31,16 @@ metadata {
 			capability 	"Temperature Measurement"
 			capability  "Relative Humidity Measurement"
 			capability 	"Sensor"
-			capability 	"Battery"
 			capability	"Refresh"
 
 			attribute "groupId", "number"
 			attribute "roomId", "number"
 			attribute "roomName", "string"
 			attribute "parentDeviceId", "string"
+			attribute "parentDeviceNetId", "string"
 			attribute "locationId", "string"
+			attribute "batterystatus", "string"
+			attribute "occupied", "enum", ["true", "false"]
 	}
 	preferences {
 		section("Logging") {
@@ -77,8 +79,8 @@ void parse(String message)
 
 def refresh()
 {
-	Log("refresh called", "trace");
-	parent.RefreshRemoteSensor(device)
+	log("refresh called", "trace");
+	parent.refreshRemoteSensor(device)
 }
 
 private determineLogLevel(data) {
