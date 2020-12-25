@@ -713,7 +713,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
     sendEvent(device, [name: 'thermostatOperatingState', value: formatedOperationStatus])
 }
 
-def getRemoteSensorUserDefName(String parentDeviceId, String locationId, String groupId, int roomId, retry=false)
+String getRemoteSensorUserDefName(String parentDeviceId, String locationId, String groupId, int roomId, retry=false)
 {
     LogDebug("getRemoteSensorUserDefName()")
     def uri = global_apiURL + '/v2/devices/thermostats/'+ parentDeviceId + '/group/' +  groupId + '/rooms?apikey=' + global_conusmerKey + '&locationId=' + locationId
