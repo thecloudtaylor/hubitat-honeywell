@@ -383,11 +383,11 @@ def discoverDevices()
                                             label: "${dev.userDefinedDeviceName} Thermostat Sensor: ${roomName}"
                                     ])
 
-                             sendEvent(newRemoteSensor, [name: "groupId", value: group.id])
-                             sendEvent(newRemoteSensor, [name: "roomId", value: room])
-                             sendEvent(newRemoteSensor, [name: "parentDeviceId", value: dev.deviceID.toString()])
-                             sendEvent(newRemoteSensor, [name: "parentDeviceNetId", value: thermoNetId])
-                             sendEvent(newRemoteSensor, [name: "locationId", value: locationID])
+                                sendEvent(newRemoteSensor, [name: "groupId", value: group.id])
+                                sendEvent(newRemoteSensor, [name: "roomId", value: room])
+                                sendEvent(newRemoteSensor, [name: "parentDeviceId", value: dev.deviceID.toString()])
+                                sendEvent(newRemoteSensor, [name: "parentDeviceNetId", value: thermoNetId])
+                                sendEvent(newRemoteSensor, [name: "locationId", value: locationID])
                             }
                             catch (com.hubitat.app.exception.UnknownDeviceTypeException e)
                             {
