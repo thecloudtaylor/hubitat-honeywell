@@ -26,8 +26,6 @@ import groovy.transform.Field
 
 @Field static String global_apiURL = "https://api.honeywell.com"
 @Field static String global_redirectURL = "https://cloud.hubitat.com/oauth/stateredirect"
-@Field static String global_conusmerKey = "DEb39Y2eKMrv3fGpoKudWvLOZ9LDey6N"
-@Field static String global_consumerSecret = "hGyrQFX5TU4frGG5"
 
 definition(
         name: "Honeywell Home",
@@ -43,6 +41,8 @@ preferences
 {
     page(name: "mainPage")
     page(name: "debugPage", title: "Debug Options", install: false)
+    page(name: "loginPage", title: "Login Options", install: true)
+    page(name: "connectToHoneywell")
 }
 
 mappings {
@@ -65,8 +65,14 @@ def mainPage() {
             getDiscoverButton()
             listDiscoveredDevices()
 
-            connectToHoneywell()
-            
+            section {
+                href(
+                    name       : 'loginHref',
+                    title      : 'Login Options',
+                    page       : 'loginPage',
+                    description: 'Access Login Options'
+                )
+            }            
             section {
                 input name: "debugOutput", type: "bool", title: "Enable Debug Logging?", defaultValue: false, submitOnChange: true
             }
@@ -87,6 +93,31 @@ def installCheck()
 }
 
 
+
+def loginPage() 
+{
+    dynamicPage(name:"loginPage", title: "Honeywell Auth Configuration", install: false, uninstall: false) {
+        section {
+            paragraph "The default key's below are shared and typically hit rate limits."
+            paragraph "Please create and input your own Consumer and API Key From https://developer.honeywellhome.com/"  
+                    
+            paragraph """Signup is free, once you have a username/password login and then:
+                1) Navigate to "My Apps"
+                2) Click "Create New App"
+                3) Provide an "App Name" can be anything (I use Hubitat)
+                4) Input "https://cloud.hubitat.com/oauth/stateredirect" (without quotes) as the callback.
+                5) The App will be created, click on it to expand the box and then copy over the Consumer Key and Secret below. 
+            """
+
+        }
+        section {
+            input name: "consumerKey", type: "text", title: "Consumer Key", description: "From https://developer.honeywellhome.com/", required: true, defaultValue: "DEb39Y2eKMrv3fGpoKudWvLOZ9LDey6N", submitOnChange: true
+            input name: "consumerSecret", type: "text", title: "Consumer Secret", description: "From https://developer.honeywellhome.com/", required: true, defaultValue: "hGyrQFX5TU4frGG5", submitOnChange: true
+            href name: "connectToHoneywell", title: "Connect to Honeywell", page: "connectToHoneywell", description: "Connect to Honeywell"
+        }
+    }
+}
+
 def debugPage() {
     dynamicPage(name:"debugPage", title: "Debug", install: false, uninstall: false) {
         section {
@@ -104,6 +135,10 @@ def debugPage() {
         section {
             input 'initialize', 'button', title: 'initialize', submitOnChange: true
         }
+        section {
+            input 'createNewAccessToken', 'button', title: 'Create New Access Token', submitOnChange: true
+        }
+        
     }
 }
 
@@ -168,6 +203,7 @@ def uninstalled()
 def connectToHoneywell() 
 {
     LogDebug("connectToHoneywell()");
+    LogDebug("Key: ${settings.consumerKey}")
 
     //if this isn't defined early then the redirect fails for some reason...
     def redirectLocation = "http://www.bing.com";
@@ -175,10 +211,9 @@ def connectToHoneywell()
     {
         createAccessToken();
     }
-
-    def state = java.net.URLEncoder.encode("${getHubUID()}/apps/${app.id}/handleAuth?access_token=${state.accessToken}", "UTF-8")
+    def auth_state = java.net.URLEncoder.encode("${getHubUID()}/apps/${app.id}/handleAuth?access_token=${state.accessToken}", "UTF-8")
     def escapedRedirectURL = java.net.URLEncoder.encode(global_redirectURL, "UTF-8")
-    def authQueryString = "response_type=code&redirect_uri=${escapedRedirectURL}&client_id=${global_conusmerKey}&state=${state}";
+    def authQueryString = "response_type=code&redirect_uri=${escapedRedirectURL}&client_id=${settings.consumerKey}&state=${auth_state}";
 
     def params = [
         uri: global_apiURL,
@@ -186,7 +221,6 @@ def connectToHoneywell()
         queryString: authQueryString.toString()
     ]
     LogDebug("honeywell_auth request params: ${params}");
-
     try {
         httpPost(params) { response -> 
             if (response.status == 302) 
@@ -207,17 +241,19 @@ def connectToHoneywell()
         LogError("API Auth failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
-    section
-    {
-        paragraph "Click below to be redirected to Honeywall to authorize Hubitat access."
-        href(
-            name       : 'authHref',
-            title      : 'Establish OAuth Link with Honeywell',
-            url        : redirectLocation,
-            description: ''
-        )
-        //href url:redirectURL, external:true, required:false, title:"Connect to Honeywell:", description:description
-    } 
+
+    dynamicPage(name: "mainPage", title: "Honeywell Home", install: true, uninstall: true) {
+        section
+        {
+            paragraph "Click below to be redirected to Honeywall to authorize Hubitat access."
+            href(
+                name       : 'authHref',
+                title      : 'Establish OAuth Link with Honeywell',
+                url        : redirectLocation,
+                description: ''
+            )
+        }
+    }
 }
 
 def getDiscoverButton() 
@@ -293,6 +329,15 @@ def appButtonHandler(btn) {
     case 'initialize':
         initialize()
         break
+    case 'createNewAccessToken':
+        state.access_token = null
+        createAccessToken()
+        break
+    case 'connectToHoneywell':
+        connectToHoneywell()
+        break
+    default:
+        LogError("Invalid Button In Handler")
     }
 }
 
@@ -311,7 +356,7 @@ def discoverDevices()
 {
     LogDebug("discoverDevices()");
 
-    def uri = global_apiURL + '/v2/locations' + "?apikey=" + global_conusmerKey
+    def uri = global_apiURL + '/v2/locations' + "?apikey=" + settings.consumerKey
     def headers = [ Authorization: 'Bearer ' + state.access_token ]
     def contentType = 'application/json'
     def params = [ uri: uri, headers: headers, contentType: contentType ]
@@ -397,7 +442,7 @@ def discoverDevices()
                             {
                             //Intentionally ignored.  Expected if device id already exists in HE.
                             }
-}
+                        }
                     }
                 }
             }
@@ -447,7 +492,7 @@ def handleAuthRedirect()
     def authCode = params.code
 
     LogDebug("AuthCode: ${authCode}")
-    def authorization = ("${global_conusmerKey}:${global_consumerSecret}").bytes.encodeBase64().toString()
+    def authorization = ("${settings.consumerKey}:${settings.consumerSecret}").bytes.encodeBase64().toString()
 
     def headers = [
                     Authorization: authorization,
@@ -485,7 +530,7 @@ def refreshToken()
 
     if (state.refresh_token != null)
     {
-        def authorization = ("${global_conusmerKey}:${global_consumerSecret}").bytes.encodeBase64().toString()
+        def authorization = ("${settings.consumerKey}:${settings.consumerSecret}").bytes.encodeBase64().toString()
 
         def headers = [
                         Authorization: authorization,
@@ -621,7 +666,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
 
     LogDebug("Attempting to Update DeviceID: ${honewellDeviceID}, With LocationID: ${honeywellLocation}");
 
-    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '?apikey=' + settings.consumerKey + '&locationId=' + honeywellLocation
     def headers = [ Authorization: 'Bearer ' + state.access_token ]
     def contentType = 'application/json'
     def params = [ uri: uri, headers: headers, contentType: contentType ]
@@ -716,7 +761,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
 String getRemoteSensorUserDefName(String parentDeviceId, String locationId, String groupId, int roomId, retry=false)
 {
     LogDebug("getRemoteSensorUserDefName()")
-    def uri = global_apiURL + '/v2/devices/thermostats/'+ parentDeviceId + '/group/' +  groupId + '/rooms?apikey=' + global_conusmerKey + '&locationId=' + locationId
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ parentDeviceId + '/group/' +  groupId + '/rooms?apikey=' + settings.consumerKey + '&locationId=' + locationId
     def headers = [ Authorization: 'Bearer ' + state.access_token ]
     def contentType = 'application/json'
     def params = [ uri: uri, headers: headers, contentType: contentType ]
@@ -773,7 +818,7 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     def honeywellLocation = device.currentValue("locationId")
     def groupID = device.currentValue("groupId")
     def roomID = device.currentValue("roomId")
-    def uri = global_apiURL + '/v2/devices/thermostats/'+ honeywellDeviceID + '/group/' +  groupID + '/rooms?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honeywellDeviceID + '/group/' +  groupID + '/rooms?apikey=' + settings.consumerKey + '&locationId=' + honeywellLocation
     def headers = [ Authorization: 'Bearer ' + state.access_token ]
     def contentType = 'application/json'
     def params = [ uri: uri, headers: headers, contentType: contentType ]
@@ -881,7 +926,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     }
 
     LogDebug("Attempting to Set DeviceID: ${honewellDeviceID}, With LocationID: ${honeywellLocation}");
-    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '?apikey=' + settings.consumerKey + '&locationId=' + honeywellLocation
 
     def headers = [
                     Authorization: 'Bearer ' + state.access_token,
@@ -971,7 +1016,7 @@ def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null, retry=false)
 
 
     LogDebug("Attempting to Set Fan For DeviceID: ${honewellDeviceID}, With LocationID: ${honeywellLocation}");
-    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '/fan' + '?apikey=' + global_conusmerKey + '&locationId=' + honeywellLocation
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honewellDeviceID + '/fan' + '?apikey=' + settings.consumerKey + '&locationId=' + honeywellLocation
 
     def headers = [
                     Authorization: 'Bearer ' + state.access_token,
