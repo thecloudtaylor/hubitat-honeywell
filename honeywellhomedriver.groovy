@@ -82,6 +82,10 @@ void disableDebugLog()
 void installed()
 {
     LogInfo("Installing.");
+    heatModeEnabled = true
+    coolModeEnabled = true
+    debugLogs = false
+    descriptionText = true
     refresh()
 }
 
