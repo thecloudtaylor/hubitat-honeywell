@@ -724,6 +724,16 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
         sendEvent(device, [name: "autoChangeoverActive", value: "unsupported"])
     }
 
+    if (reJson.changeableValues.containsKey("emergencyHeatActive"))
+    {
+        refreshHelper(reJson.changeableValues, "emergencyHeatActive", "emergencyHeatActive", device, null, false, false)
+    }
+    else
+    {
+        LogDebug("Thermostat does not support emergency heat")
+        sendEvent(device, [name: "emergencyHeatActive", value: null])
+    }
+
     if (reJson.containsKey("settings") && reJson.settings.containsKey("fan"))
     {
         refreshHelper(reJson.settings.fan, "allowedModes", "supportedThermostatFanModes", device, null, true, false)
@@ -732,7 +742,6 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
             refreshHelper(reJson.settings.fan.changeableValues, "mode", "thermostatFanMode", device, null, false, true)
         }
         refreshHelper(reJson.settings.fan, "fanRunning", "thermostatFanState", device, null, false, false)
-
     }
 
     def operationStatus = reJson.operationStatus.mode
@@ -883,7 +892,7 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     refreshHelper(roomJson, "name", "roomName", device, null, false, false)
 }
 
-def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null, retry=false)
+def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, emergencyHeatActive=null, heatPoint=null, coolPoint=null, retry=false)
 {
     LogDebug("setThermosatSetPoint()")
     def deviceID = device.getDeviceNetworkId();
@@ -958,6 +967,10 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
         body.put("autoChangeoverActive",autoChangeoverActive)
     }
     
+    if (emergencyHeatActive != null)
+    {
+        body.put("emergencyHeatActive", emergencyHeatActive)
+    }
 
     def params = [ uri: uri, headers: headers, body: body]
     LogDebug("setThermosat-params ${params}")
