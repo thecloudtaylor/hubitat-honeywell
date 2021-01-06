@@ -919,6 +919,10 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
     {
         mode = "Off"
     }
+    else if (mode.toLowerCase() == "auto")
+    {
+        mode = "Auto"
+    }
     else
     {
         LogError("Invalid Mode Specified: ${mode}")
