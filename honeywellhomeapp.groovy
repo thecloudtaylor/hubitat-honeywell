@@ -906,15 +906,16 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
         mode=device.currentValue('thermostatMode');
     }
 
-    if (mode == "heat")
+    //The Honeywell API expects uppercase.
+    if (mode.toLowerCase() == "heat")
     {
         mode = "Heat"
     }
-    else if (mode == "cool")
+    else if (mode.toLowerCase() == "cool")
     {
         mode = "Cool"
     }
-    else if (mode == "off")
+    else if (mode.toLowerCase() == "off")
     {
         mode = "Off"
     }
@@ -1009,15 +1010,15 @@ def setThermosatFan(com.hubitat.app.DeviceWrapper device, fan=null, retry=false)
         fan=device.('thermostatFanMode');
     }
 
-    if (fan == "auto")
+    if (fan.toLowerCase() == "auto")
     {
         fan = "Auto"
     }
-    else if (fan == "on")
+    else if (fan.toLowerCase() == "on")
     {
         fan = "On"
     }
-    else if (fan == "circulate")
+    else if (fan.toLowerCase() == "circulate")
     {
         fan = "Circulate"
     }
