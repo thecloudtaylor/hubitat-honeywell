@@ -178,6 +178,17 @@ def initialize()
     unschedule()
     refreshToken()
     RefreshAllDevices()
+    
+    if (refreshIntervals != "0" && refreshIntervals != null)
+    {
+        def cronString = ('0 */' + refreshIntervals + ' * ? * *')
+        LogDebug("Scheduling Refresh cronstring: ${cronString}")
+        schedule(cronString, RefreshAllDevices)
+    }
+    else
+    {
+        LogInfo("Auto Refresh Disabled.")
+    }
 }
 
 def updated() 
@@ -599,17 +610,6 @@ def RefreshAllDevices()
                 refreshThermosat(it)
             }
         }
-    }
-
-    if (refreshIntervals != "0" && refreshIntervals != null)
-    {
-        def cronString = ('0 */' + refreshIntervals + ' * ? * *')
-        LogDebug("Scheduling Refresh cronstring: ${cronString}")
-        schedule(cronString, RefreshAllDevices)
-    }
-    else
-    {
-        LogInfo("Auto Refresh Disabled.")
     }
 }
 
