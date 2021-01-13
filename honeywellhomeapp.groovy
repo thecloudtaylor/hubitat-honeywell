@@ -523,6 +523,11 @@ def handleAuthRedirect()
     catch (groovyx.net.http.HttpResponseException e) 
     {
         LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        if (e.getStatusCode() == 400  && e.response.data["error"] == "invalid_grant")
+        {
+            LogError("Token Refresh is Failing Due to Invalid Grant. Refresh has been disabled, please re-connect with Honeywell.")
+            unschedule()
+        }
     }
 
     def stringBuilder = new StringBuilder()
@@ -560,7 +565,12 @@ def refreshToken()
         } 
         catch (groovyx.net.http.HttpResponseException e) 
         {
-            LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")  
+            LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+            if (e.getStatusCode() == 400  && e.response.data["error"] == "invalid_grant")
+            {
+                LogError("Token Refresh is Failing Due to Invalid Grant. Refresh has been disabled, please re-connect with Honeywell.")
+                unschedule()
+            }
         }
     }
     else
@@ -693,7 +703,7 @@ def refreshThermosat(com.hubitat.app.DeviceWrapper device, retry=false)
             refreshToken()
             refreshThermosat(device, true)
         }
-
+        
         LogError("Thermosat API failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return;
     }
