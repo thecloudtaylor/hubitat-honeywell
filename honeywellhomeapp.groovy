@@ -825,9 +825,8 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     LogDebug("refreshRemoteSensor()")
     def honeywellDeviceID = device.currentValue("parentDeviceId")
     def honeywellLocation = device.currentValue("locationId")
-    def groupID = device.currentValue("groupId")
     def roomID = device.currentValue("roomId")
-    def uri = global_apiURL + '/v2/devices/thermostats/'+ honeywellDeviceID + '/group/' +  groupID + '/rooms?apikey=' + settings.consumerKey + '&locationId=' + honeywellLocation
+    def uri = global_apiURL + '/v2/devices/thermostats/'+ honeywellDeviceID + '/priority?apikey=' + settings.consumerKey + '&locationId=' + honeywellLocation
     def headers = [ Authorization: 'Bearer ' + state.access_token ]
     def contentType = 'application/json'
     def params = [ uri: uri, headers: headers, contentType: contentType ]
@@ -873,7 +872,7 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     }
 
     def roomJson
-    reJson.rooms.each{ room ->
+    reJson.currentPriority.rooms.each{ room ->
         if (room.id == roomID) {
             roomJson = room
             return
@@ -885,11 +884,11 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     }
     LogDebug( "roomJson: ${roomJson}")
     //TO DO: Fix accessory indexing workaround (if possible)
-    refreshHelper(roomJson.accessories[0].accessoryValue, "indoorTemperature", "temperature", device, tempUnits, false, false)
-    refreshHelper(roomJson.accessories[0].accessoryValue, "indoorHumidity", "humidity", device, null, false, false)
-    refreshHelper(roomJson.accessories[0].accessoryValue, "batteryStatus", "batterystatus", device, null, false, false)
-    refreshHelper(roomJson.accessories[0].accessoryValue, "occupancyDet", "occupied", device, null, false, false)
-    refreshHelper(roomJson, "name", "roomName", device, null, false, false)
+    refreshHelper(roomJson, "roomAvgTemp", "temperature", device, tempUnits, false, false)
+    refreshHelper(roomJson, "roomAvgHumidity", "humidity", device, null, false, false)
+    refreshHelper(roomJson.accessories[0], "status", "batterystatus", device, null, false, false)
+    refreshHelper(roomJson, "overallMotion", "occupied", device, null, false, false)
+    refreshHelper(roomJson, "roomName", "roomName", device, null, false, false)
 }
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, emergencyHeatActive=null, heatPoint=null, coolPoint=null, retry=false)
