@@ -58,9 +58,9 @@ jobs:
  
       - name: temp_ls
         run: |
-          ls
-          ls hubitat-packages
-          ls hubitat-honeywell
+          ls ../
+          ls ../hubitat-packages
+          ls ../hubitat-honeywell
 
       - name: Cleanup
         if: always()
