@@ -989,7 +989,7 @@ def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoCh
         {
             LogWarn('Authorization token expired, will refresh and retry.')
             refreshToken()
-            setThermosatSetPoint(device, mode, autoChangeoverActive, heatPoint, coolPoint, true)
+            setThermosatSetPoint(device, mode, autoChangeoverActive, emergencyHeatActive,  heatPoint, coolPoint, true)
         }
         LogError("Set Api Call failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
