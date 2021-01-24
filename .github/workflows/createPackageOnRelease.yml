@@ -36,7 +36,7 @@ jobs:
         env:
           ENCRYPTION_KEY: ${{ secrets.PACKAGE_REPO_KEY }}
         run: |
-          openssl aes-256-cbc -in .github/workflows/secrets/package_repo.enc -out .github/workflows/secrets/id_rsa -pass pass:$ENCRYPTION_KEY -d -md sha512
+          ./.github/workflows/secrets/decrypt_secret.sh
  
       - name: Setup SSH agent
         env:
@@ -46,8 +46,8 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
  
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          chmod 0600 .github/workflows/secrets/id_rsa
-          ssh-add .github/workflows/secrets/id_rsa
+          chmod 0600 $HOME/secrets/id_rsa
+          ssh-add $HOME/secrets/id_rsa
  
       - name: Checkout
         env:
