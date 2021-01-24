@@ -56,11 +56,9 @@ jobs:
           cd ..
           git clone git@github.com:thecloudtaylor/hubitat-packages.git
  
-      - name: temp_ls
+      - name: Update Package JSON with Hpm
         run: |
-          ls ../
-          ls ../hubitat-packages
-          ls ../hubitat-honeywell
+          ./.github/workflows/runHpmForRelease.sh -releaseTag $GITHUB_REF
 
       - name: Cleanup
         if: always()
