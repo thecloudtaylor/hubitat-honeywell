@@ -62,7 +62,7 @@ jobs:
  
       - name: Update Package JSON with Hpm
         run: |
-          ./.github/workflows/runHpmForRelease.sh --releaseTag $GITHUB_REF $manualrunreleaseTag
+          ./.github/workflows/runHpmForRelease.sh --releaseTag $GITHUB_REF ${{ github.event.inputs.manualrunreleaseTag }}
 
       - name: Cleanup
         if: always()
