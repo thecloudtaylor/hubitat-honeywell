@@ -1,20 +1,26 @@
 #!/bin/bash
 
-usage="Usage: $(basename "$0") [-r | --releaseTag]<GitHub Release Tag in simver format>"
+usage="Usage: $(basename "$0") [-g | --githubRef]<github referance> [-r | --releaseTag]<GitHub Release Tag in simver format>"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -r|--releaseTag) releaseTag="$2"; shift ;;
+        -g|--githubRef) githubRef="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; echo $usage; exit 1 ;;
     esac
     shift
 done
 
-if [[ -z "${releaseTag}" ]]; then
+if [[ -z "${githubRef}" ]]; then
   echo "Not all requied parmiters passed!"; echo $usage; exit 1 ;
 fi
 
-version=$(echo $releaseTag | grep -Eo [0-9].[0-9].[0-9])
+if [[ -z "${releaseTag}" ]]; then
+  version=$(echo $githubRef | grep -Eo [0-9].[0-9].[0-9])
+else
+  version=$(echo $releaseTag | grep -Eo [0-9].[0-9].[0-9])
+fi
+
 echo $version
 
 if [[ -z "${version}" ]]; then
