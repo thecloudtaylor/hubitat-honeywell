@@ -17,8 +17,10 @@ fi
 
 if [[ -z "${releaseTag}" ]]; then
   version=$(echo $githubRef | grep -Eo [0-9].[0-9].[0-9])
+  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$githubRef"
 else
   version=$(echo $releaseTag | grep -Eo [0-9].[0-9].[0-9])
+  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$releaseTag"
 fi
 
 echo $version
@@ -27,7 +29,6 @@ if [[ -z "${version}" ]]; then
   echo "Tag string did not contain a proper version (x.y.z)"; exit 1 ;
 fi
 
-baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$releaseTag"
 echo $baseCodePath
 
 releaseJson=$(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/thecloudtaylor/hubitat-honeywell/releases/tags/$releaseTag)
