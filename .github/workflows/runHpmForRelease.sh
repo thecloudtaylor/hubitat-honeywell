@@ -50,9 +50,21 @@ echo "ThermDriverPath: $thermDriverPath"
 echo "SensorDriverPath: $sensorDriverPath"
 echo "ReleaseNotes: $releaseNote"
 
-./.github/workflows/tools/hpm manifest-modify-driver --id 390cc6e1-acbb-4af3-be52-7a68e4bcc580 --version=$version --location $thermDriverPath ../hubitat-packages/packages/honeywellManifest.json
-./.github/workflows/tools/hpm manifest-modify-driver --id ebe84e87-e064-4029-9e5b-ad0cb7939230 --version=$version --location $sensorDriverPath ../hubitat-packages/packages/honeywellManifest.json
-./.github/workflows/tools/hpm manifest-modify-app --id fe2bb542-854f-47b4-8d20-cde1ead99f2d --version=$version --location $appPath ../hubitat-packages/packages/honeywellManifest.json
-./.github/workflows/tools/hpm manifest-modify --releasenotes=$relNotes --version=$version ../hubitat-packages/packages/honeywellManifest.json
+hpmCmd="./.github/workflows/tools/hpm manifest-modify-driver --id 390cc6e1-acbb-4af3-be52-7a68e4bcc580 --version=$version --location $thermDriverPath ../hubitat-packages/packages/honeywellManifest.json"
+echo "Running: $hpmCmd"
+$hpmCmd
 
+hpmCmd="./.github/workflows/tools/hpm manifest-modify-driver --id ebe84e87-e064-4029-9e5b-ad0cb7939230 --version=$version --location $sensorDriverPath ../hubitat-packages/packages/honeywellManifest.json"
+echo "Running: $hpmCmd"
+$hpmCmd
+
+hpmCmd="./.github/workflows/tools/hpm manifest-modify-app --id fe2bb542-854f-47b4-8d20-cde1ead99f2d --version=$version --location $appPath ../hubitat-packages/packages/honeywellManifest.json"
+echo "Running: $hpmCmd"
+$hpmCmd
+
+hpmCmd="./.github/workflows/tools/hpm manifest-modify --releasenotes=$releaseNote --version=$version ../hubitat-packages/packages/honeywellManifest.json"
+echo "Running: $hpmCmd"
+$hpmCmd
+
+echo "Output of Manifest:"
 cat ../hubitat-packages/packages/honeywellManifest.json
