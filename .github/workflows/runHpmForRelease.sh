@@ -27,7 +27,7 @@ else
   baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$releaseTag";
 fi
 
-echo $version
+echo "SimVersion: $version"
 
 if [[ -z "${version}" ]]; then
   echo "Tag string did not contain a proper version (x.y.z)"; exit 1 ;
