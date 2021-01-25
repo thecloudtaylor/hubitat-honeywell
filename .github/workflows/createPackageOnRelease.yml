@@ -63,6 +63,12 @@ jobs:
       - name: Update Package JSON with Hpm
         run: |
           ./.github/workflows/runHpmForRelease.sh --githubRef $GITHUB_REF --releaseTag ${{ github.event.inputs.manualrunreleaseTag }}
+      
+      - name: Stage Commit and Push Repo
+        run: |
+          git add ../hubitat-packages/packages/honeywellManifest.json
+          git commit -m GitHubPipelineUpdating Honeywell Version
+          git push
 
       - name: Cleanup
         if: always()
