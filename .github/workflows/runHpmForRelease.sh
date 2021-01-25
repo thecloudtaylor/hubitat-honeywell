@@ -77,3 +77,20 @@ eval $hpmCmd
 
 echo "Output of Manifest:"
 cat ../hubitat-packages/packages/honeywellManifest.json
+
+cd ../hubitat-packages
+
+gitCmd="git add ./packages/honeywellManifest.json"
+echo "Running: $gitCmd"
+eval $gitCmd
+[ $? -eq 0 ]  || exit 1
+
+gitCmd="git commit -m GitHubPipeline Updating Honeywell Version to $version"
+echo "Running: $gitCmd"
+eval $gitCmd
+[ $? -eq 0 ]  || exit 1
+
+gitCmd="git push"
+echo "Running: $gitCmd"
+eval $gitCmd
+[ $? -eq 0 ]  || exit 1
