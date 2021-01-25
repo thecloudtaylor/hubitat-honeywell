@@ -80,6 +80,16 @@ cat ../hubitat-packages/packages/honeywellManifest.json
 
 cd ../hubitat-packages
 
+gitCmd="git config user.name 'Honeywell GitHub Pipeline'"
+echo "Running: $gitCmd"
+eval $gitCmd
+[ $? -eq 0 ]  || exit 1
+
+gitCmd="git config --global user.email 'honeywellpipeline@thecloudtaylor.com'"
+echo "Running: $gitCmd"
+eval $gitCmd
+[ $? -eq 0 ]  || exit 1
+
 gitCmd="git add ./packages/honeywellManifest.json"
 echo "Running: $gitCmd"
 eval $gitCmd
