@@ -15,12 +15,16 @@ if [[ -z "${githubRef}" ]]; then
   echo "Not all requied parmiters passed!"; echo $usage; exit 1 ;
 fi
 
+echo "Param githubRef: $githubRef"
+echo "Param releaseTag: $releaseTag"
+
+
 if [[ -z "${releaseTag}" ]]; then
-  version=$(echo $githubRef | grep -Eo [0-9].[0-9].[0-9])
-  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$githubRef"
+  version=$(echo $githubRef | grep -Eo [0-9].[0-9].[0-9]);
+  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$githubRef";
 else
-  version=$(echo $releaseTag | grep -Eo [0-9].[0-9].[0-9])
-  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$releaseTag"
+  version=$(echo $releaseTag | grep -Eo [0-9].[0-9].[0-9]);
+  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-honeywell/$releaseTag";
 fi
 
 echo $version
