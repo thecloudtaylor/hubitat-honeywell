@@ -61,6 +61,8 @@ jobs:
           git clone git@github.com:thecloudtaylor/hubitat-packages.git
  
       - name: Update Package JSON with Hpm
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           ./.github/workflows/runHpmForRelease.sh --githubRef $GITHUB_REF --releaseTag ${{ github.event.inputs.manualrunreleaseTag }}
 
