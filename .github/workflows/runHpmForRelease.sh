@@ -85,7 +85,7 @@ echo "Running: $gitCmd"
 eval $gitCmd
 [ $? -eq 0 ]  || exit 1
 
-gitCmd="git commit -m GitHubPipeline Updating Honeywell Version to $version"
+gitCmd="git commit -m \"GitHubPipeline Updating Honeywell Version to $version\""
 echo "Running: $gitCmd"
 eval $gitCmd
 [ $? -eq 0 ]  || exit 1
