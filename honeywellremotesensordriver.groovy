@@ -42,7 +42,7 @@ metadata {
 			attribute "parentDeviceNetId", "string"
 			attribute "locationId", "string"
 			attribute "batterystatus", "string"
-			attribute "occupied", "enum", ["true", "false"]
+			attribute "occupied", "enum", ["Occupied", "Vacant"]
 	}
 	preferences {
 		section("Logging") {
