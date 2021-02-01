@@ -820,6 +820,32 @@ String getRemoteSensorUserDefName(String parentDeviceId, String locationId, Stri
     return value
 }
 
+def refreshOccupiedAttr(jsonString, com.hubitat.app.DeviceWrapper device)
+{
+    try
+    {
+        LogDebug("refreshOccupiedAttr() - device:${device}")
+
+        def value = jsonString.get("overallMotion")
+        LogDebug("overallMotion: ${value}")
+
+        if (value == null)
+        {
+            LogDebug("Remote Sensor Error -  Missing overallMotion entry")
+            return false
+        }
+
+        def occupancy = value ? "Occupied" : "Vacant"
+        sendEvent(device, [name: "occupied", value: occupancy])
+    }
+    catch (Exception e)
+    {
+        LogDebug("refreshOccupiedAttr() error: ${e.getLocalizedMessage()}")
+        return false
+    }
+    return true
+}
+
 def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
 {
     LogDebug("refreshRemoteSensor()")
@@ -887,8 +913,8 @@ def refreshRemoteSensor(com.hubitat.app.DeviceWrapper device, retry=false)
     refreshHelper(roomJson, "roomAvgTemp", "temperature", device, tempUnits, false, false)
     refreshHelper(roomJson, "roomAvgHumidity", "humidity", device, null, false, false)
     refreshHelper(roomJson.accessories[0], "status", "batterystatus", device, null, false, false)
-    refreshHelper(roomJson, "overallMotion", "occupied", device, null, false, false)
     refreshHelper(roomJson, "roomName", "roomName", device, null, false, false)
+    refreshOccupiedAttr(roomJson, device)
 }
 
 def setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, emergencyHeatActive=null, heatPoint=null, coolPoint=null, retry=false)
