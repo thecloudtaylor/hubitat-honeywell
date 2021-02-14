@@ -173,11 +173,11 @@ void setCoolingSetpoint(temperature)
     LogDebug("setCoolingSetpoint() - autoChangeoverActive: ${device.currentValue("autoChangeoverActive")}");
     
     //setThermosatSetPoint(com.hubitat.app.DeviceWrapper device, mode=null, autoChangeoverActive=false, heatPoint=null, coolPoint=null)
-    if (!parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), device.currentValue("emergencyHeatActive"), device.currentValue("emergencyHeatActive"), null, temperature))
+    if (!parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), device.currentValue("emergencyHeatActive"), null, temperature))
     {
         LogWarn("Set cooling point failed, attempting a refresh and re-try.")
         parent.refreshThermosat(device)
-        parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), device.currentValue("emergencyHeatActive"), device.currentValue("emergencyHeatActive"), null, temperature)
+        parent.setThermosatSetPoint(device, null, device.currentValue("autoChangeoverActive"), device.currentValue("emergencyHeatActive"), null, temperature)
     }
     else
     {
